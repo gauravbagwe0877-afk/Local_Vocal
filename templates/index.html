@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Local Vocal — Discover Sawantwadi's Best Hotels & Cafes{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-bg">
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+        <div class="hero-orb hero-orb-3"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-eyebrow">
+            <span class="eyebrow-dot"></span>
+            Discover Sindhudurg's Hidden Gems
+        </div>
+        <h1 class="hero-title">
+            Where <em>Sawantwadi</em><br>Speaks for Itself
+        </h1>
+        <p class="hero-desc">Real reviews from real locals. Explore the finest hotels, cafes, and eateries tucked along the Konkan coast.</p>
+        <form class="hero-search" method="GET" action="{{ url_for('index') }}">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" name="search" placeholder="Search hotels, cafes, restaurants…" value="{{ search }}" class="search-input">
+                <button type="submit" class="btn btn-primary search-btn">Search</button>
+            </div>
+        </form>
+        <div class="hero-stats">
+            <div class="stat"><span class="stat-num">{{ places|length }}</span><span class="stat-label">Places</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num">{{ categories|length }}</span><span class="stat-label">Categories</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num">100%</span><span class="stat-label">Local Voices</span></div>
+        </div>
+    </div>
+    <div class="hero-scroll">
+        <div class="scroll-line"></div>
+        <span>Scroll</span>
+    </div>
+</section>
+
+<!-- Featured Places -->
+{% if featured and not search and not selected_category %}
+<section class="section section-featured">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-tag">✦ Editor's Choice</div>
+            <h2 class="section-title">Top Picks in Sawantwadi</h2>
+            <p class="section-desc">Hand-picked places with the highest community ratings</p>
+        </div>
+        <div class="featured-grid">
+            {% for place in featured %}
+            <a href="{{ url_for('place_detail', place_id=place.id) }}" class="featured-card">
+                <div class="featured-img-wrap">
+                    <img src="{{ place.image_url or 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' }}"
+                         alt="{{ place.name }}" class="featured-img" loading="lazy">
+                    <div class="featured-overlay"></div>
+                    <div class="featured-badge">{{ place.category_icon }} {{ place.category_name }}</div>
+                    <div class="featured-price">{{ place.price_range }}</div>
+                </div>
+                <div class="featured-body">
+                    <h3 class="featured-name">{{ place.name }}</h3>
+                    <p class="featured-desc">{{ place.description[:90] }}…</p>
+                    <div class="featured-meta">
+                        <div class="stars-display">
+                            {% set rating = place.avg_rating or 0 %}
+                            {% for i in range(1, 6) %}
+                                <span class="star {% if i <= rating %}filled{% elif i <= rating + 0.5 %}half{% endif %}">★</span>
+                            {% endfor %}
+                            <span class="rating-text">{{ '%.1f'|format(rating) if rating else 'New' }}</span>
+                        </div>
+                        <span class="review-count">{{ place.review_count }} review{% if place.review_count != 1 %}s{% endif %}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Categories Filter -->
+<section class="section section-browse">
+    <div class="container">
+        <div class="browse-header">
+            <div class="section-header">
+                <div class="section-tag">✦ Browse</div>
+                <h2 class="section-title">
+                    {% if search %}Results for "{{ search }}"
+                    {% elif selected_category %}{{ categories|selectattr('id','eq', selected_category|int)|map(attribute='name')|first|default('Category') }}
+                    {% else %}All Places{% endif %}
+                </h2>
+            </div>
+            <div class="filter-bar">
+                <a href="{{ url_for('index') }}{% if search %}?search={{ search }}{% endif %}"
+                   class="filter-pill {% if not selected_category %}active{% endif %}">
+                    All
+                </a>
+                {% for cat in categories %}
+                <a href="{{ url_for('index') }}?category={{ cat.id }}{% if search %}&search={{ search }}{% endif %}"
+                   class="filter-pill {% if selected_category|int == cat.id %}active{% endif %}">
+                    {{ cat.icon }} {{ cat.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if places %}
+        <div class="places-grid" id="placesGrid">
+            {% for place in places %}
+            <a href="{{ url_for('place_detail', place_id=place.id) }}" class="place-card" data-name="{{ place.name }}">
+                <div class="card-img-wrap">
+                    <img src="{{ place.image_url or 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' }}"
+                         alt="{{ place.name }}" class="card-img" loading="lazy">
+                    <span class="card-category-badge">{{ place.category_icon }}</span>
+                    <span class="card-price">{{ place.price_range }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <h3 class="card-name">{{ place.name }}</h3>
+                        <div class="card-rating">
+                            <span class="star filled">★</span>
+                            <span class="rating-val">{{ '%.1f'|format(place.avg_rating) if place.avg_rating else '—' }}</span>
+                        </div>
+                    </div>
+                    <p class="card-desc">{{ place.description[:80] if place.description else 'A wonderful place in Sawantwadi.' }}…</p>
+                    <div class="card-footer">
+                        <span class="card-category">{{ place.category_name }}</span>
+                        <span class="card-reviews">{{ place.review_count }} review{% if place.review_count != 1 %}s{% endif %}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>No places found</h3>
+            <p>Try a different search term or browse all categories.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Clear Filters</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- CTA Banner -->
+{% if not session.get('user_id') %}
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-card">
+            <div class="cta-content">
+                <div class="cta-tag">Join the Community</div>
+                <h2>Be the Local Voice</h2>
+                <p>Share your honest experiences. Help travellers and locals discover the best Sawantwadi has to offer.</p>
+                <div class="cta-actions">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Create Account</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg">Sign In</a>
+                </div>
+            </div>
+            <div class="cta-decoration">
+                <div class="cta-orb"></div>
+                <div class="cta-emoji-stack">
+                    <span>🏨</span><span>☕</span><span>🍽️</span><span>⭐</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

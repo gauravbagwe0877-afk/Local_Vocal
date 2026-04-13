@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Manage Places — Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">🏨 Manage Places</h1>
+                <p class="admin-sub">{{ places|length }} places in the database</p>
+            </div>
+            <div class="admin-nav-pills">
+                <a href="{{ url_for('admin_dashboard') }}" class="pill">Overview</a>
+                <a href="{{ url_for('admin_places') }}" class="pill active">Places</a>
+                <a href="{{ url_for('admin_reviews') }}" class="pill">Reviews</a>
+                <a href="{{ url_for('admin_users') }}" class="pill">Users</a>
+            </div>
+        </div>
+
+        <!-- Add New Place Form -->
+        <div class="admin-panel" style="margin-bottom:2rem">
+            <h2 class="panel-title">➕ Add New Place</h2>
+            <form method="POST" action="{{ url_for('admin_add_place') }}" class="admin-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Place Name *</label>
+                        <input type="text" name="name" class="form-input" required placeholder="e.g. Hotel Sawant Palace">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select name="category_id" class="form-input" required>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price Range</label>
+                        <select name="price_range" class="form-input">
+                            <option>₹</option><option selected>₹₹</option><option>₹₹₹</option>
+                            <option>₹₹₹₹</option><option>₹₹₹₹₹</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-input" rows="2" placeholder="Describe this place…"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" class="form-input" placeholder="Full address, Sawantwadi">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" class="form-input" placeholder="+91 9876543210">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Image URL (Unsplash recommended)</label>
+                        <input type="url" name="image_url" class="form-input" placeholder="https://images.unsplash.com/…">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Website</label>
+                        <input type="url" name="website" class="form-input" placeholder="https://…">
+                    </div>
+                </div>
+                <div class="form-group form-check-group">
+                    <label class="check-label">
+                        <input type="checkbox" name="is_featured"> Mark as Featured / Editor's Pick
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Place</button>
+            </form>
+        </div>
+
+        <!-- Places Table -->
+        <div class="admin-panel">
+            <h2 class="panel-title">All Places</h2>
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Name</th><th>Category</th>
+                            <th>Rating</th><th>Reviews</th><th>Price</th>
+                            <th>Status</th><th>Featured</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in places %}
+                        <tr class="{% if not p.is_active %}row-inactive{% endif %}">
+                            <td class="id-cell">{{ p.id }}</td>
+                            <td><a href="{{ url_for('place_detail', place_id=p.id) }}" target="_blank" class="place-link">{{ p.name }}</a></td>
+                            <td><span class="cat-pill">{{ p.category_name }}</span></td>
+                            <td>{{ p.avg_rating or '—' }}</td>
+                            <td>{{ p.review_count }}</td>
+                            <td>{{ p.price_range }}</td>
+                            <td>
+                                <span class="status-pill {% if p.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                    {{ 'Active' if p.is_active else 'Hidden' }}
+                                </span>
+                            </td>
+                            <td>{{ '⭐' if p.is_featured else '—' }}</td>
+                            <td class="actions-cell">
+                                <form method="POST" action="{{ url_for('admin_toggle_place', place_id=p.id) }}" style="display:inline">
+                                    <button class="btn btn-outline btn-xs">{{ 'Hide' if p.is_active else 'Show' }}</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin_delete_place', place_id=p.id) }}"
+                                      style="display:inline" onsubmit="return confirm('Delete {{ p.name }} and all its reviews?')">
+                                    <button class="btn btn-danger btn-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Manage Reviews — Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">💬 Manage Reviews</h1>
+                <p class="admin-sub">{{ reviews|length }} reviews in the database</p>
+            </div>
+            <div class="admin-nav-pills">
+                <a href="{{ url_for('admin_dashboard') }}" class="pill">Overview</a>
+                <a href="{{ url_for('admin_places') }}" class="pill">Places</a>
+                <a href="{{ url_for('admin_reviews') }}" class="pill active">Reviews</a>
+                <a href="{{ url_for('admin_users') }}" class="pill">Users</a>
+            </div>
+        </div>
+
+        <div class="admin-panel">
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>ID</th><th>User</th><th>Place</th><th>Rating</th><th>Title</th><th>Date</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reviews %}
+                        <tr>
+                            <td class="id-cell">{{ r.id }}</td>
+                            <td>{{ r.username }}</td>
+                            <td><a href="{{ url_for('place_detail', place_id=r.place_id) }}" target="_blank" class="place-link">{{ r.place_name }}</a></td>
+                            <td>
+                                <span class="rating-badge rating-{{ r.rating }}">{{ r.rating }}★</span>
+                            </td>
+                            <td class="review-title-cell" title="{{ r.body }}">{{ r.title[:50] }}{% if r.title|length > 50 %}…{% endif %}</td>
+                            <td>{{ r.created_at[:10] }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin_delete_review', review_id=r.id) }}"
+                                      onsubmit="return confirm('Delete this review?')">
+                                    <button class="btn btn-danger btn-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

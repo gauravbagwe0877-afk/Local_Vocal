@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% block title %}{{ place.name }} — Local Vocal Sawantwadi{% endblock %}
+
+{% block content %}
+<div class="detail-page">
+
+    <!-- Hero Image Banner -->
+    <div class="detail-hero">
+        <img src="{{ place.image_url or 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' }}"
+             alt="{{ place.name }}" class="detail-hero-img">
+        <div class="detail-hero-overlay"></div>
+        <div class="detail-hero-content">
+            <a href="{{ url_for('index') }}" class="back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Explore
+            </a>
+            <div class="detail-category-badge">{{ place.category_icon }} {{ place.category_name }}</div>
+            <h1 class="detail-hero-title">{{ place.name }}</h1>
+            <div class="detail-hero-meta">
+                <div class="stars-display stars-lg">
+                    {% set rating = place.avg_rating or 0 %}
+                    {% for i in range(1, 6) %}
+                        <span class="star {% if i <= rating %}filled{% elif i <= rating + 0.5 %}half{% endif %}">★</span>
+                    {% endfor %}
+                    <span class="rating-text">{{ '%.1f'|format(rating) if rating else 'No ratings yet' }}</span>
+                </div>
+                <span class="detail-review-count">{{ place.review_count }} review{% if place.review_count != 1 %}s{% endif %}</span>
+                <span class="detail-price">{{ place.price_range }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="detail-layout">
+
+            <!-- Left: Main Content -->
+            <div class="detail-main">
+
+                <!-- Description -->
+                <section class="detail-section">
+                    <h2 class="detail-section-title">About this Place</h2>
+                    <p class="detail-description">{{ place.description }}</p>
+                </section>
+
+                <!-- Rating Breakdown -->
+                {% if place.review_count > 0 %}
+                <section class="detail-section rating-section">
+                    <h2 class="detail-section-title">Rating Breakdown</h2>
+                    <div class="rating-breakdown">
+                        <div class="rating-big">
+                            <span class="rating-number">{{ '%.1f'|format(place.avg_rating) }}</span>
+                            <div class="stars-display">
+                                {% for i in range(1, 6) %}
+                                    <span class="star {% if i <= place.avg_rating %}filled{% endif %}">★</span>
+                                {% endfor %}
+                            </div>
+                            <span class="rating-total">out of 5</span>
+                        </div>
+                        <div class="rating-bars">
+                            {% for star in [5,4,3,2,1] %}
+                            {% set count = rating_dist.get(star, 0) %}
+                            {% set pct = (count / place.review_count * 100)|int if place.review_count > 0 else 0 %}
+                            <div class="rating-bar-row">
+                                <span class="bar-label">{{ star }} ★</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: {{ pct }}%"></div>
+                                </div>
+                                <span class="bar-count">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+
+                <!-- Reviews List -->
+                <section class="detail-section">
+                    <div class="reviews-header">
+                        <h2 class="detail-section-title">Community Reviews</h2>
+                        {% if place.review_count > 0 %}
+                        <span class="reviews-badge">{{ place.review_count }} review{% if place.review_count != 1 %}s{% endif %}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if reviews %}
+                    <div class="reviews-list">
+                        {% for review in reviews %}
+                        <div class="review-card {% if session.user_id == review.user_id %}own-review{% endif %}">
+                            <div class="review-header">
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">{{ review.user_name[0]|upper }}</div>
+                                    <div>
+                                        <div class="reviewer-name">{{ review.user_name }}</div>
+                                        <div class="review-date">
+                                            {{ review.created_at[:10] }}
+                                            {% if review.updated_at != review.created_at %}
+                                                <span class="edited-tag">(edited)</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="review-stars">
+                                    {% for i in range(1, 6) %}
+                                        <span class="star {% if i <= review.rating %}filled{% endif %}">★</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <h4 class="review-title">{{ review.title }}</h4>
+                            <p class="review-body">{{ review.body }}</p>
+                            {% if session.get('user_id') == review.user_id or session.get('is_admin') %}
+                            <div class="review-actions">
+                                {% if session.get('user_id') == review.user_id %}
+                                <a href="{{ url_for('edit_review', review_id=review.id) }}" class="btn btn-outline btn-xs">Edit</a>
+                                {% endif %}
+                                <form method="POST" action="{{ url_for('delete_review', review_id=review.id) }}"
+                                      onsubmit="return confirm('Delete this review?')">
+                                    <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="no-reviews">
+                        <span class="no-review-icon">💬</span>
+                        <p>No reviews yet. Be the first to share your experience!</p>
+                    </div>
+                    {% endif %}
+                </section>
+
+                <!-- Submit Review -->
+                {% if session.get('user_id') and not user_review %}
+                <section class="detail-section review-form-section">
+                    <h2 class="detail-section-title">Write a Review</h2>
+                    <form method="POST" action="{{ url_for('submit_review') }}" class="review-form">
+                        <input type="hidden" name="place_id" value="{{ place.id }}">
+
+                        <div class="form-group">
+                            <label class="form-label">Your Rating</label>
+                            <div class="star-picker" id="starPicker">
+                                {% for i in range(1, 6) %}
+                                <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" required>
+                                <label for="star{{ i }}" class="star-pick">★</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="title" class="form-label">Review Title</label>
+                            <input type="text" id="title" name="title" class="form-input"
+                                   placeholder="Summarise your experience…" required maxlength="120">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="body" class="form-label">Your Review</label>
+                            <textarea id="body" name="body" class="form-input form-textarea"
+                                      placeholder="Share what you loved (or didn't love)…" required rows="5"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">Publish Review</button>
+                    </form>
+                </section>
+
+                {% elif session.get('user_id') and user_review %}
+                <div class="already-reviewed">
+                    <span>✅</span>
+                    <div>
+                        <strong>You've already reviewed this place.</strong>
+                        <p>Want to update it? <a href="{{ url_for('edit_review', review_id=user_review.id) }}">Edit your review</a></p>
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="login-to-review">
+                    <div class="login-review-icon">✍️</div>
+                    <h3>Share Your Experience</h3>
+                    <p>Login to write a review and help fellow travellers and locals discover great places.</p>
+                    <div class="login-actions">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary">Login to Review</a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline">Create Account</a>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Right: Sidebar Info -->
+            <aside class="detail-sidebar">
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Location & Contact</h3>
+                    {% if place.address %}
+                    <div class="sidebar-item">
+                        <span class="sidebar-icon">📍</span>
+                        <span>{{ place.address }}</span>
+                    </div>
+                    {% endif %}
+                    {% if place.phone %}
+                    <div class="sidebar-item">
+                        <span class="sidebar-icon">📞</span>
+                        <a href="tel:{{ place.phone }}">{{ place.phone }}</a>
+                    </div>
+                    {% endif %}
+                    {% if place.website %}
+                    <div class="sidebar-item">
+                        <span class="sidebar-icon">🌐</span>
+                        <a href="{{ place.website }}" target="_blank" rel="noopener">Visit Website</a>
+                    </div>
+                    {% endif %}
+                    <div class="sidebar-item">
+                        <span class="sidebar-icon">💰</span>
+                        <span>Price Range: {{ place.price_range }}</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-card sidebar-stats-card">
+                    <h3 class="sidebar-title">Quick Stats</h3>
+                    <div class="quick-stat">
+                        <span class="qs-label">Overall Rating</span>
+                        <span class="qs-val">{{ '%.1f'|format(place.avg_rating) if place.avg_rating else 'N/A' }} / 5</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="qs-label">Total Reviews</span>
+                        <span class="qs-val">{{ place.review_count }}</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="qs-label">Category</span>
+                        <span class="qs-val">{{ place.category_icon }} {{ place.category_name }}</span>
+                    </div>
+                    {% if place.is_featured %}
+                    <div class="featured-label">⭐ Editor's Featured Pick</div>
+                    {% endif %}
+                </div>
+
+                <a href="{{ url_for('index') }}" class="btn btn-outline btn-full">← Back to Explore</a>
+            </aside>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

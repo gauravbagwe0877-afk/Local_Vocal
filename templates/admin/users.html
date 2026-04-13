@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users — Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">👥 Manage Users</h1>
+                <p class="admin-sub">{{ users|length }} registered users</p>
+            </div>
+            <div class="admin-nav-pills">
+                <a href="{{ url_for('admin_dashboard') }}" class="pill">Overview</a>
+                <a href="{{ url_for('admin_places') }}" class="pill">Places</a>
+                <a href="{{ url_for('admin_reviews') }}" class="pill">Reviews</a>
+                <a href="{{ url_for('admin_users') }}" class="pill active">Users</a>
+            </div>
+        </div>
+
+        <div class="admin-panel">
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>ID</th><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Reviews</th><th>Joined</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="id-cell">{{ u.id }}</td>
+                            <td><strong>{{ u.name }}</strong></td>
+                            <td>@{{ u.username }}</td>
+                            <td>{{ u.email }}</td>
+                            <td>
+                                {% if u.is_admin %}
+                                    <span class="status-pill status-active">Admin</span>
+                                {% else %}
+                                    <span class="cat-pill">User</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ u.review_count }}</td>
+                            <td>{{ u.created_at[:10] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
