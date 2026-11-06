@@ -1,0 +1,147 @@
+{% extends 'hotel/base_hotel.html' %}
+{% block title %}Guest Directory — {{ hotel_settings.hotel_name }} PMS{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Guest Profiles & Directory</h1>
+        <p>Maintain guest CRM records, contact preferences, and historical lifetime stays.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('addGuestModal')">
+            <span>+ Add New Guest</span>
+        </button>
+    </div>
+</div>
+
+<div class="pms-table-toolbar">
+    <div style="font-size: 0.9rem; color: var(--color-muted);">
+        Total registered guests: <strong>{{ guests|length }}</strong>
+    </div>
+
+    <form method="GET" action="{{ url_for('hotel.guests') }}" class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" name="search" value="{{ search }}" placeholder="Search name, phone, email, ID...">
+    </form>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Guest Name</th>
+                    <th class="sortable">Contact Info</th>
+                    <th>ID Document</th>
+                    <th>City / State</th>
+                    <th class="sortable">Total Stays</th>
+                    <th class="sortable">Lifetime Spend</th>
+                    <th>Preferences / Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in guests %}
+                <tr>
+                    <td>
+                        <strong style="font-size: 0.95rem;">{{ g.full_name }}</strong>
+                    </td>
+                    <td>
+                        <span class="mono" style="font-size: 0.85rem;">{{ g.phone }}</span><br>
+                        <small style="color:var(--color-muted);">{{ g.email }}</small>
+                    </td>
+                    <td>
+                        {% if g.id_type %}
+                        <span style="font-size: 0.8rem; font-weight:600;">{{ g.id_type }}</span><br>
+                        <small class="mono" style="color:var(--color-muted);">{{ g.id_number or '—' }}</small>
+                        {% else %}
+                        <span style="color:var(--color-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ g.address or '—' }}</small></td>
+                    <td class="mono" style="font-weight: 700; color: var(--color-secondary);">
+                        {{ g.total_stays }}
+                    </td>
+                    <td class="mono" style="font-weight: 700;">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(g.total_spent) }}
+                    </td>
+                    <td><small style="color:var(--color-muted);">{{ g.notes or '—' }}</small></td>
+                    <td>
+                        <a href="{{ url_for('hotel.guest_detail', guest_id=g.id) }}" class="btn-pms btn-pms-outline btn-pms-sm">
+                            View History &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 32px; color: var(--color-muted);">
+                        No guests found matching search query.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Add New Guest -->
+<div id="addGuestModal" class="pms-modal-overlay">
+    <div class="pms-modal-container">
+        <div class="pms-modal-header">
+            <h3>Register New Guest</h3>
+            <button class="pms-modal-close" onclick="closeModal('addGuestModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('hotel.add_guest') }}">
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="text" name="full_name" required placeholder=" ">
+                    <label>Full Name <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="tel" name="phone" required placeholder=" ">
+                    <label>Phone Number <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="email" name="email" placeholder=" ">
+                <label>Email Address</label>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <select name="id_type">
+                        <option value="Aadhaar" selected>Aadhaar</option>
+                        <option value="Passport">Passport</option>
+                        <option value="Driving License">Driving License</option>
+                        <option value="Voter ID">Voter ID</option>
+                    </select>
+                    <label>Govt ID Type</label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="text" name="id_number" placeholder=" ">
+                    <label>ID Card Number</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="address" rows="2" placeholder=" "></textarea>
+                <label>Residential / Corporate Address</label>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="notes" rows="2" placeholder=" "></textarea>
+                <label>Guest Preferences / Allergies / VIP Notes</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('addGuestModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Save Guest Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

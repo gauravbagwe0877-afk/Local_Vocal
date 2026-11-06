@@ -1,0 +1,226 @@
+{% extends 'hotel/base_hotel.html' %}
+{% block title %}Invoice {{ invoice.invoice_number }} — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header no-print">
+    <div>
+        <a href="{{ url_for('hotel.billing') }}" class="btn-pms btn-pms-outline btn-pms-sm" style="margin-bottom:8px;">&larr; Back to Billing</a>
+        <h1>Invoice {{ invoice.invoice_number }}</h1>
+        <p>Booking Reference: <span class="mono">{{ invoice.booking_ref }}</span> | Status: <strong style="text-transform:capitalize;">{{ invoice.status }}</strong></p>
+    </div>
+    <div class="pms-actions-bar">
+        {% if invoice.total > invoice.paid_amount %}
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('recordPaymentModal')">
+            <span>+ Record Payment</span>
+        </button>
+        {% endif %}
+        <button type="button" class="btn-pms btn-pms-outline" onclick="window.print()">
+            <span>🖨️ Print Invoice</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── FORMAL PRINTABLE INVOICE SHEET ── -->
+<div class="invoice-sheet">
+    <!-- Header -->
+    <div class="invoice-header">
+        <div class="invoice-brand">
+            <h2>{{ hotel_settings.hotel_name }}</h2>
+            <div style="font-size:0.85rem; color:var(--color-muted); line-height:1.4;">
+                {{ hotel_settings.hotel_address }}<br>
+                Phone: {{ hotel_settings.hotel_phone }} | Email: {{ hotel_settings.hotel_email }}<br>
+                <strong>GSTIN: 27AABCS1429B1Z8</strong>
+            </div>
+        </div>
+        <div class="invoice-meta">
+            <h3 style="margin:0 0 6px; font-size:1.3rem; color:var(--color-primary);">TAX INVOICE</h3>
+            <div><strong>Invoice No:</strong> {{ invoice.invoice_number }}</div>
+            <div><strong>Date:</strong> {{ invoice.issued_at[:10] }}</div>
+            <div><strong>Booking Ref:</strong> {{ invoice.booking_ref }}</div>
+            <div style="margin-top:6px;">
+                <span class="badge-{{ 'confirmed' if invoice.status == 'paid' else ('pending' if invoice.status == 'partial' else 'maintenance') }}">
+                    Payment Status: {{ invoice.status|upper }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parties & Reservation details -->
+    <div class="invoice-parties">
+        <div>
+            <h4 style="font-size:0.85rem; text-transform:uppercase; color:var(--color-muted); margin-bottom:8px;">Billed To (Guest)</h4>
+            <div style="font-size:1.05rem; font-weight:700;">{{ invoice.guest_name }}</div>
+            <div style="font-size:0.88rem; color:var(--color-text); line-height:1.4; margin-top:4px;">
+                Phone: <span class="mono">{{ invoice.guest_phone }}</span><br>
+                Email: {{ invoice.guest_email }}<br>
+                Address: {{ invoice.guest_address or 'Sawantwadi' }}<br>
+                {% if invoice.id_type %}ID Proof: <span class="mono">{{ invoice.id_type }} ({{ invoice.id_number or 'Verified' }})</span>{% endif %}
+            </div>
+        </div>
+        <div>
+            <h4 style="font-size:0.85rem; text-transform:uppercase; color:var(--color-muted); margin-bottom:8px;">Stay Itinerary</h4>
+            <div style="font-size:0.88rem; line-height:1.5;">
+                <strong>Room:</strong> {{ invoice.room_number or '—' }} ({{ invoice.room_type_name }})<br>
+                <strong>Check-In:</strong> <span class="mono">{{ invoice.check_in_date }}</span> (From {{ hotel_settings.check_in_time }})<br>
+                <strong>Check-Out:</strong> <span class="mono">{{ invoice.check_out_date }}</span> (By {{ hotel_settings.check_out_time }})<br>
+                <strong>Total Nights:</strong> <span class="mono">{{ invoice.nights }} Nights</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Line items table -->
+    <table class="invoice-items-table">
+        <thead>
+            <tr>
+                <th style="width: 50%;">Description</th>
+                <th style="text-align: center;">Qty / Nights</th>
+                <th style="text-align: right;">Unit Rate</th>
+                <th style="text-align: right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    <strong>{{ item.description }}</strong><br>
+                    <small style="color:var(--color-muted); text-transform:capitalize;">Category: {{ item.item_type }}</small>
+                </td>
+                <td style="text-align: center;" class="mono">{{ item.quantity }}</td>
+                <td style="text-align: right;" class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(item.unit_price) }}</td>
+                <td style="text-align: right;" class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(item.amount) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals summary -->
+    <div class="invoice-totals">
+        <div class="invoice-totals-row">
+            <span>Subtotal:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.subtotal) }}</span>
+        </div>
+        <div class="invoice-totals-row">
+            <span>GST Tax ({{ hotel_settings.gst_rate }}%):</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.tax_amount) }}</span>
+        </div>
+        {% if invoice.discount > 0 %}
+        <div class="invoice-totals-row">
+            <span>Discount:</span>
+            <span>- {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.discount) }}</span>
+        </div>
+        {% endif %}
+        <div class="invoice-totals-row grand-total">
+            <span>Invoice Total:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.total) }}</span>
+        </div>
+        <div class="invoice-totals-row" style="color: var(--color-secondary); font-weight:600;">
+            <span>Total Paid:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.paid_amount) }}</span>
+        </div>
+        <div class="invoice-totals-row" style="font-weight:700; color:{% if (invoice.total - invoice.paid_amount) > 0 %}var(--color-danger){% else %}var(--color-secondary){% endif %};">
+            <span>Balance Due:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.total - invoice.paid_amount) }}</span>
+        </div>
+    </div>
+
+    <!-- Payments history breakdown -->
+    {% if payments %}
+    <div style="margin-top: 36px; border-top: 1px dashed var(--color-border); padding-top: 20px;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 12px;">Payments Received & Transactions</h4>
+        <table class="pms-table" style="font-size: 0.82rem;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th>Reference / Transaction ID</th>
+                    <th>Received By</th>
+                    <th style="text-align:right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td class="mono">{{ p.payment_date }}</td>
+                    <td style="text-transform: uppercase; font-weight:600;">{{ p.method }}</td>
+                    <td class="mono">{{ p.reference or '—' }}</td>
+                    <td>{{ p.recorded_by_name or 'Front Desk' }}</td>
+                    <td class="mono" style="text-align:right; font-weight:700; color:var(--color-secondary);">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(p.amount) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Footer notes & terms -->
+    <div style="margin-top: 48px; display:flex; justify-content:space-between; align-items:flex-end; font-size:0.8rem; color:var(--color-muted);">
+        <div>
+            <strong>Terms & Policies:</strong><br>
+            1. All guest dues are payable upon checkout.<br>
+            2. Standard check-out time is {{ hotel_settings.check_out_time }}. Late check-outs subject to availability.<br>
+            3. Thank you for staying with {{ hotel_settings.hotel_name }} in Sawantwadi!
+        </div>
+        <div style="text-align:center; min-width:180px; border-top:1px solid var(--color-border); padding-top:8px;">
+            Authorized Signatory / Front Desk
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Record Payment -->
+<div id="recordPaymentModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 480px;">
+        <div class="pms-modal-header">
+            <h3>Record Payment for {{ invoice.invoice_number }}</h3>
+            <button class="pms-modal-close" onclick="closeModal('recordPaymentModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('hotel.add_payment', invoice_id=invoice.id) }}">
+            <div style="background:#FAF5EE; padding:12px; border-radius:var(--element-radius); margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                    <span>Outstanding Balance:</span>
+                    <strong class="mono" style="color:var(--color-danger);">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.total - invoice.paid_amount) }}</strong>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="number" step="0.01" name="amount" value="{{ '%.2f'|format(invoice.total - invoice.paid_amount) }}" max="{{ '%.2f'|format(invoice.total - invoice.paid_amount) }}" required placeholder=" ">
+                <label>Payment Amount ({{ hotel_settings.currency_symbol }}) <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-floating-label">
+                <select name="method" required>
+                    <option value="cash" selected>Cash</option>
+                    <option value="card">Credit / Debit Card</option>
+                    <option value="upi">UPI (GPay / PhonePe / QR)</option>
+                    <option value="bank_transfer">Bank Transfer / NEFT</option>
+                </select>
+                <label>Payment Method <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="text" name="reference" placeholder=" " value="TXN-{{ range(100000, 999999)|random }}">
+                <label>Transaction / Voucher Reference</label>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="date" name="payment_date" value="{{ today_date }}" required placeholder=" ">
+                <label>Date of Payment <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="text" name="notes" placeholder=" ">
+                <label>Notes / Remarks</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('recordPaymentModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Submit Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

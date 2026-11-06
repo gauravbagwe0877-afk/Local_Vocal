@@ -1,0 +1,153 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Confirmation Receipt {{ booking.booking_ref }} — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header no-print">
+    <div>
+        <a href="{{ url_for('receptionist.bookings') }}" class="btn-pms btn-pms-outline btn-pms-sm" style="margin-bottom:8px;">&larr; Back to Reservations</a>
+        <h1>Booking Confirmation & Receipt</h1>
+        <p>Reference: <span class="mono">{{ booking.booking_ref }}</span> | Guest: <strong>{{ booking.guest_name }}</strong></p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="window.print()">
+            <span>🖨️ Print Confirmation & Bill</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── PRINTABLE SHEET ── -->
+<div class="invoice-sheet">
+    <div class="invoice-header">
+        <div class="invoice-brand">
+            <h2>{{ hotel_settings.hotel_name }}</h2>
+            <div style="font-size:0.85rem; color:var(--color-muted); line-height:1.4;">
+                {{ hotel_settings.hotel_address }}<br>
+                Phone: {{ hotel_settings.hotel_phone }} | Email: {{ hotel_settings.hotel_email }}<br>
+                <strong>GSTIN: 27AABCS1429B1Z8</strong>
+            </div>
+        </div>
+        <div class="invoice-meta">
+            <h3 style="margin:0 0 6px; font-size:1.3rem; color:var(--color-primary);">BOOKING CONFIRMATION</h3>
+            <div><strong>Booking ID:</strong> {{ booking.booking_ref }}</div>
+            {% if invoice %}<div><strong>Invoice No:</strong> {{ invoice.invoice_number }}</div>{% endif %}
+            <div><strong>Date:</strong> {{ booking.created_at[:10] }}</div>
+            <div style="margin-top:6px;">
+                <span class="badge-{{ booking.status.replace('_', '-') }}">
+                    Status: {{ booking.status|upper }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="invoice-parties">
+        <div>
+            <h4 style="font-size:0.85rem; text-transform:uppercase; color:var(--color-muted); margin-bottom:8px;">Customer Information</h4>
+            <div style="font-size:1.05rem; font-weight:700;">{{ booking.guest_name }}</div>
+            <div style="font-size:0.88rem; color:var(--color-text); line-height:1.5; margin-top:4px;">
+                Phone: <span class="mono">{{ booking.guest_phone }}</span><br>
+                Email: {{ booking.guest_email }}<br>
+                {% if booking.id_type %}ID Proof: <span class="mono">{{ booking.id_type }} ({{ booking.id_number or 'Verified' }})</span><br>{% endif %}
+                Address: {{ booking.guest_address or 'On file' }}
+            </div>
+        </div>
+        <div>
+            <h4 style="font-size:0.85rem; text-transform:uppercase; color:var(--color-muted); margin-bottom:8px;">Reservation Summary</h4>
+            <div style="font-size:0.88rem; line-height:1.5;">
+                <strong>Allocated Room:</strong> {{ booking.room_number or 'Unassigned' }} ({{ booking.room_type_name }})<br>
+                <strong>Check-In:</strong> <span class="mono">{{ booking.check_in_date }}</span> (From {{ hotel_settings.check_in_time }})<br>
+                <strong>Check-Out:</strong> <span class="mono">{{ booking.check_out_date }}</span> (By {{ hotel_settings.check_out_time }})<br>
+                <strong>Guests:</strong> {{ booking.adults }} Adult(s), {{ booking.children }} Child(ren)<br>
+                <strong>Duration:</strong> <span class="mono">{{ booking.nights }} Night(s)</span>
+            </div>
+        </div>
+    </div>
+
+    {% if items %}
+    <table class="invoice-items-table">
+        <thead>
+            <tr>
+                <th style="width: 50%;">Description</th>
+                <th style="text-align: center;">Qty / Nights</th>
+                <th style="text-align: right;">Rate</th>
+                <th style="text-align: right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td><strong>{{ item.description }}</strong></td>
+                <td style="text-align: center;" class="mono">{{ item.quantity }}</td>
+                <td style="text-align: right;" class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(item.unit_price) }}</td>
+                <td style="text-align: right;" class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(item.amount) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if invoice %}
+    <div class="invoice-totals">
+        <div class="invoice-totals-row">
+            <span>Subtotal:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.subtotal) }}</span>
+        </div>
+        <div class="invoice-totals-row">
+            <span>GST Tax ({{ hotel_settings.gst_rate }}%):</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.tax_amount) }}</span>
+        </div>
+        <div class="invoice-totals-row grand-total">
+            <span>Grand Total:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.total) }}</span>
+        </div>
+        <div class="invoice-totals-row" style="color:var(--color-secondary); font-weight:600;">
+            <span>Total Paid:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.paid_amount) }}</span>
+        </div>
+        <div class="invoice-totals-row" style="font-weight:700; color:{% if (invoice.total - invoice.paid_amount) > 0 %}var(--color-danger){% else %}var(--color-secondary){% endif %};">
+            <span>Balance Due:</span>
+            <span>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(invoice.total - invoice.paid_amount) }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if payments %}
+    <div style="margin-top: 32px; border-top: 1px dashed var(--color-border); padding-top: 16px;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 8px;">Payment Transaction Ledger</h4>
+        <table class="pms-table" style="font-size: 0.82rem;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th>Reference / Voucher</th>
+                    <th style="text-align:right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td class="mono">{{ p.payment_date }}</td>
+                    <td style="text-transform: uppercase; font-weight:600;">{{ p.method }}</td>
+                    <td class="mono">{{ p.reference or '—' }}</td>
+                    <td class="mono" style="text-align:right; font-weight:700; color:var(--color-secondary);">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(p.amount) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 48px; display:flex; justify-content:space-between; align-items:flex-end; font-size:0.8rem; color:var(--color-muted);">
+        <div>
+            <strong>Guest Cancellation Policy:</strong><br>
+            Cancellations must be made 24 hours prior to check-in.<br>
+            Thank you for staying at {{ hotel_settings.hotel_name }}!
+        </div>
+        <div style="text-align:center; min-width:180px; border-top:1px solid var(--color-border); padding-top:8px;">
+            Front Desk Agent Signatory
+        </div>
+    </div>
+</div>
+{% endblock %}
+

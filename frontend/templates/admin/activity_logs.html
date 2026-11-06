@@ -1,0 +1,69 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Activity Logs & Staff Audit — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Receptionist & System Activity Logs</h1>
+        <p>Real-time audit trail of front desk check-ins, payments, room modifications, and logins.</p>
+    </div>
+</div>
+
+<div class="pms-table-toolbar">
+    <div style="font-size: 0.9rem; color: var(--color-muted);">
+        Recent recorded actions: <strong>{{ logs|length }}</strong>
+    </div>
+
+    <div class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search by action, staff name, or details..." data-target-table="#logsTableBody">
+    </div>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Timestamp</th>
+                    <th class="sortable">Staff Member</th>
+                    <th class="sortable">Role</th>
+                    <th class="sortable">Action Code</th>
+                    <th>Audit Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody id="logsTableBody">
+                {% for log in logs %}
+                <tr>
+                    <td class="mono"><small><strong>{{ log.created_at[:19] }}</strong></small></td>
+                    <td>
+                        <strong>{{ log.user_name or 'System Automated' }}</strong><br>
+                        <small class="mono" style="color: var(--color-muted);">@{{ log.username or 'system' }}</small>
+                    </td>
+                    <td>
+                        <span class="badge-{{ 'confirmed' if log.user_role == 'admin' else ('reserved' if log.user_role == 'receptionist' else 'maintenance') }}">
+                            {{ (log.user_role or 'System')|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="mono" style="font-size: 0.8rem; font-weight: 700; color: var(--color-primary);">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td style="font-size: 0.88rem; line-height: 1.4;">{{ log.details }}</td>
+                    <td class="mono"><small style="color: var(--color-muted);">{{ log.ip_address }}</small></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 32px; color: var(--color-muted);">
+                        No activity records captured yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,86 @@
+{% extends 'hotel/base_hotel.html' %}
+{% block title %}{{ guest.full_name }} — Guest Profile{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <a href="{{ url_for('hotel.guests') }}" class="btn-pms btn-pms-outline btn-pms-sm" style="margin-bottom:8px;">&larr; Back to Directory</a>
+        <h1>{{ guest.full_name }}</h1>
+        <p>Guest ID: <span class="mono">GST-{{ guest.id }}</span> | Member Stays: <strong>{{ guest.total_stays }}</strong></p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 340px 1fr; gap: 24px;">
+    <!-- Guest Info Card -->
+    <div class="pms-card">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">👤 Contact Information</h3>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px; font-size:0.9rem;">
+            <div>
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--color-muted); font-weight:600;">Phone</label>
+                <div class="mono" style="font-weight:600;">{{ guest.phone }}</div>
+            </div>
+            <div>
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--color-muted); font-weight:600;">Email</label>
+                <div>{{ guest.email }}</div>
+            </div>
+            <div>
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--color-muted); font-weight:600;">ID Proof</label>
+                <div class="mono">{{ guest.id_type or 'None' }}: {{ guest.id_number or '—' }}</div>
+            </div>
+            <div>
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--color-muted); font-weight:600;">Address</label>
+                <div>{{ guest.address or 'No address on file' }}</div>
+            </div>
+            <div>
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--color-muted); font-weight:600;">Special Notes</label>
+                <div style="background:#FAF5EE; padding:10px; border-radius:6px; font-size:0.85rem;">
+                    {{ guest.notes or 'No special preferences recorded.' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking History -->
+    <div class="pms-card">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">📅 Stay & Reservation History</h3>
+        </div>
+
+        <div class="pms-table-container">
+            <table class="pms-table">
+                <thead>
+                    <tr>
+                        <th>Booking Ref</th>
+                        <th>Room</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Nights</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td class="mono"><strong>{{ b.booking_ref }}</strong></td>
+                        <td>{{ b.room_number or '—' }} <small style="color:var(--color-muted);">({{ b.room_type_name }})</small></td>
+                        <td class="mono">{{ b.check_in_date }}</td>
+                        <td class="mono">{{ b.check_out_date }}</td>
+                        <td class="mono">{{ b.nights }}</td>
+                        <td class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</strong></td>
+                        <td><span class="badge-{{ b.status.replace('_', '-') }}">{{ b.status|capitalize }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:24px; color:var(--color-muted);">No stay history found for this guest.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

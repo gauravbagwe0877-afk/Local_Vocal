@@ -1,0 +1,171 @@
+{% extends 'hotel/base_hotel.html' %}
+{% block title %}Maintenance — {{ hotel_settings.hotel_name }} PMS{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Maintenance & Engineering Tickets</h1>
+        <p>Track technical repairs, plumbing, electrical, and room maintenance issues.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('reportIssueModal')">
+            <span>+ Report Issue</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── 1. FILTER CHIPS & TOOLBAR ── -->
+<div class="pms-table-toolbar">
+    <div class="pms-filter-chips">
+        <a href="{{ url_for('hotel.maintenance') }}" class="pms-chip {% if not selected_status or selected_status == 'all' %}active{% endif %}">
+            All Tickets ({{ counts.all }})
+        </a>
+        <a href="{{ url_for('hotel.maintenance', status='open') }}" class="pms-chip {% if selected_status == 'open' %}active{% endif %}">
+            Open ({{ counts.open }})
+        </a>
+        <a href="{{ url_for('hotel.maintenance', status='in_progress') }}" class="pms-chip {% if selected_status == 'in_progress' %}active{% endif %}">
+            In Progress ({{ counts.in_progress }})
+        </a>
+        <a href="{{ url_for('hotel.maintenance', status='resolved') }}" class="pms-chip {% if selected_status == 'resolved' %}active{% endif %}">
+            Resolved ({{ counts.resolved }})
+        </a>
+    </div>
+
+    <div class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search ticket, room or issue..." data-target-table="#maintenanceTableBody">
+    </div>
+</div>
+
+<!-- ── 2. TICKETS DATA TABLE ── -->
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Ticket ID</th>
+                    <th class="sortable">Location / Room</th>
+                    <th class="sortable">Reported Issue</th>
+                    <th class="sortable">Priority</th>
+                    <th class="sortable">Reported By</th>
+                    <th>Status</th>
+                    <th>Date Logged</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="maintenanceTableBody">
+                {% for req in requests %}
+                <tr>
+                    <td class="mono"><strong>#MNT-{{ req.id }}</strong></td>
+                    <td class="mono">
+                        {% if req.room_number %}
+                        <strong>Room {{ req.room_number }}</strong> ({{ req.floor }})
+                        {% else %}
+                        <span style="color:var(--color-muted);">General Facility</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ req.issue }}</strong><br>
+                        <small style="color:var(--color-muted);">{{ req.notes or 'No technical notes logged' }}</small>
+                    </td>
+                    <td>
+                        <span style="font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:10px; background-color:{% if req.priority == 'urgent' %}#FEE2E2; color:#991B1B;{% elif req.priority == 'high' %}#FEF9C3; color:#854D0E;{% else %}#F3F4F6; color:#374151;{% endif %};">
+                            {{ req.priority|upper }}
+                        </span>
+                    </td>
+                    <td>{{ req.reporter_name or 'Staff' }}</td>
+                    <td>
+                        <span class="badge-{{ 'maintenance' if req.status == 'open' else ('cleaning' if req.status == 'in_progress' else 'confirmed') }}">
+                            {{ req.status.replace('_', ' ').capitalize() }}
+                        </span>
+                    </td>
+                    <td class="mono"><small>{{ req.created_at[:10] }}</small></td>
+                    <td>
+                        <div class="pms-table-actions">
+                            {% if req.status == 'open' %}
+                            <form method="POST" action="{{ url_for('hotel.update_maintenance_status', req_id=req.id) }}">
+                                <input type="hidden" name="status" value="in_progress">
+                                <button type="submit" class="btn-pms btn-pms-outline btn-pms-sm">Start Repair</button>
+                            </form>
+                            {% elif req.status == 'in_progress' %}
+                            <form method="POST" action="{{ url_for('hotel.update_maintenance_status', req_id=req.id) }}">
+                                <input type="hidden" name="status" value="resolved">
+                                <button type="submit" class="btn-pms btn-pms-secondary btn-pms-sm">Mark Resolved</button>
+                            </form>
+                            {% else %}
+                            <span style="font-size:0.75rem; color:var(--color-secondary); font-weight:600;">✓ Resolved</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:32px; color:var(--color-muted);">No maintenance tickets found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Report Maintenance Issue -->
+<div id="reportIssueModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 500px;">
+        <div class="pms-modal-header">
+            <h3>Report Maintenance Issue</h3>
+            <button class="pms-modal-close" onclick="closeModal('reportIssueModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('hotel.add_maintenance_request') }}">
+            <div class="pms-floating-label">
+                <select name="room_id">
+                    <option value="">General Facility / Non-Room</option>
+                    {% for r in rooms %}
+                    <option value="{{ r.id }}">Room {{ r.room_number }} ({{ r.floor }})</option>
+                    {% endfor %}
+                </select>
+                <label>Affected Room</label>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="issue" rows="2" required placeholder=" "></textarea>
+                <label>Issue Description <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <select name="priority">
+                        <option value="normal" selected>Normal</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent (Room goes out of service)</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <label>Priority Level</label>
+                </div>
+
+                <div class="pms-floating-label">
+                    <select name="assigned_to">
+                        <option value="">Unassigned</option>
+                        {% for u in staff %}
+                        <option value="{{ u.id }}">{{ u.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label>Assignee</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="notes" rows="2" placeholder=" "></textarea>
+                <label>Repair Notes / Technician Instructions</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('reportIssueModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Submit Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

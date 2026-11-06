@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ hotel_settings.hotel_name }} — Receptionist Operations Desk{% endblock %}</title>
+
+    <!-- Google Fonts: Playfair Display, Inter, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- CSS Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/hotel_pms.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="pms-body">
+
+    <!-- ── RECEPTIONIST SIDEBAR (260px) ───────────────────────────────────────── -->
+    <aside class="pms-sidebar">
+        <a href="{{ url_for('receptionist.dashboard') }}" class="pms-sidebar-brand">
+            <div class="pms-brand-logo" style="background: linear-gradient(135deg, var(--color-secondary), #40916C);">FD</div>
+            <div class="pms-brand-info">
+                <h2>{{ hotel_settings.hotel_name }}</h2>
+                <span>FRONT DESK DESK</span>
+            </div>
+        </a>
+
+        <nav class="pms-sidebar-nav">
+            <div class="pms-nav-section-title">Front Desk Operations</div>
+            <a href="{{ url_for('receptionist.dashboard') }}" class="pms-nav-link {% if request.endpoint in ['receptionist.dashboard', 'receptionist.index'] %}active{% endif %}">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard Overview</span>
+            </a>
+            <a href="{{ url_for('receptionist.checkin_checkout') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.checkin_checkout' %}active{% endif %}">
+                <span class="nav-icon">🛎️</span>
+                <span>Check-in / Check-out</span>
+            </a>
+            <a href="{{ url_for('receptionist.new_booking') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.new_booking' %}active{% endif %}">
+                <span class="nav-icon">➕</span>
+                <span>New Booking</span>
+            </a>
+            <a href="{{ url_for('receptionist.bookings') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.bookings' %}active{% endif %}">
+                <span class="nav-icon">📅</span>
+                <span>Manage Reservations</span>
+            </a>
+
+            <div class="pms-nav-section-title">Inventory & Guests</div>
+            <a href="{{ url_for('receptionist.rooms') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.rooms' %}active{% endif %}">
+                <span class="nav-icon">🛏️</span>
+                <span>Room Availability</span>
+            </a>
+            <a href="{{ url_for('receptionist.customers') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.customers' %}active{% endif %}">
+                <span class="nav-icon">👥</span>
+                <span>Customer Directory</span>
+            </a>
+
+            <div class="pms-nav-section-title">Cash & Billing</div>
+            <a href="{{ url_for('receptionist.payments') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.payments' %}active{% endif %}">
+                <span class="nav-icon">💳</span>
+                <span>Payment Records</span>
+            </a>
+            <a href="{{ url_for('receptionist.history') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.history' %}active{% endif %}">
+                <span class="nav-icon">📜</span>
+                <span>Booking History</span>
+            </a>
+            <a href="{{ url_for('receptionist.reports') }}" class="pms-nav-link {% if request.endpoint == 'receptionist.reports' %}active{% endif %}">
+                <span class="nav-icon">📈</span>
+                <span>Daily Reports</span>
+            </a>
+        </nav>
+
+        <div class="pms-sidebar-footer">
+            <a href="{{ url_for('main.index') }}" class="pms-back-link">
+                <span>← Public Website</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT AREA ────────────────────────────────────────────────── -->
+    <div class="pms-main">
+        <!-- ── HEADER ── -->
+        <header class="pms-header">
+            <div class="pms-header-left">
+                <h2 class="pms-header-title">{{ hotel_settings.hotel_name }}</h2>
+                <div class="pms-hotel-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Front Desk Live</span>
+                </div>
+            </div>
+
+            <div class="pms-header-right">
+                <a href="{{ url_for('receptionist.new_booking') }}" class="btn-pms btn-pms-secondary btn-pms-sm">
+                    + Quick Booking
+                </a>
+
+                <span class="pms-role-badge" style="background: rgba(45, 106, 79, 0.12); color: var(--color-secondary);">Receptionist</span>
+
+                <div class="pms-user-profile">
+                    <div class="pms-user-avatar" style="background: var(--color-secondary);">
+                        {{ session.get('name', 'Staff')[0]|upper }}
+                    </div>
+                    <span style="font-weight: 600; font-size: 0.9rem;">{{ session.get('name', 'Staff').split()[0] }}</span>
+                </div>
+
+                <a href="{{ url_for('auth.receptionist_logout') }}" class="btn-pms btn-pms-outline btn-pms-sm" title="Log out">
+                    Logout
+                </a>
+            </div>
+        </header>
+
+        <!-- ── FLASH NOTIFICATIONS ── -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="padding: 16px 24px 0;">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}" role="alert" style="margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+                <span>{{ message }}</span>
+                <button type="button" class="flash-close" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- ── CONTENT CONTAINER ── -->
+        <main class="pms-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Modals placeholder -->
+    {% block modals %}{% endblock %}
+
+    <script src="{{ url_for('static', filename='js/hotel_pms.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

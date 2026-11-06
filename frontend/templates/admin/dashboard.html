@@ -1,0 +1,147 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Admin Executive Dashboard — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Executive Hotel Dashboard</h1>
+        <p>Complete control center for room inventory, staff operations, bookings, and revenue tracking.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <a href="{{ url_for('admin.rooms') }}" class="btn-pms btn-pms-primary">
+            <span>+ Add Room</span>
+        </a>
+        <a href="{{ url_for('admin.receptionists') }}" class="btn-pms btn-pms-outline">
+            <span>+ Add Receptionist</span>
+        </a>
+        <a href="{{ url_for('admin.reports') }}" class="btn-pms btn-pms-outline">
+            <span>📊 View Reports</span>
+        </a>
+    </div>
+</div>
+
+<!-- ── 1. STAT CARDS (METRICS) ── -->
+<div class="pms-stats-grid">
+    <!-- Stat 1: Total Revenue -->
+    <div class="pms-stat-card">
+        <div class="pms-stat-header">
+            <div class="pms-stat-icon primary">💳</div>
+        </div>
+        <div class="pms-stat-num currency">{{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(stats.total_revenue) }}</div>
+        <div class="pms-stat-label">Total Realized Revenue (MTD: {{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(stats.mtd_revenue) }})</div>
+        <div class="pms-stat-trend positive">▲ Live</div>
+    </div>
+
+    <!-- Stat 2: Occupancy Rate -->
+    <div class="pms-stat-card">
+        <div class="pms-stat-header">
+            <div class="pms-stat-icon secondary">🏨</div>
+        </div>
+        <div class="pms-stat-num">{{ stats.occupancy_rate }}%</div>
+        <div class="pms-stat-label">Occupancy ({{ stats.occupied_rooms }}/{{ stats.total_rooms }} Rooms Sold)</div>
+        <div class="pms-stat-trend positive">Real-time</div>
+    </div>
+
+    <!-- Stat 3: Total Bookings -->
+    <div class="pms-stat-card">
+        <div class="pms-stat-header">
+            <div class="pms-stat-icon accent">📅</div>
+        </div>
+        <div class="pms-stat-num">{{ stats.total_bookings }}</div>
+        <div class="pms-stat-label">Total Lifetime Bookings ({{ stats.active_bookings }} Active)</div>
+        <div class="pms-stat-trend neutral">All-time</div>
+    </div>
+
+    <!-- Stat 4: Pending Invoices -->
+    <div class="pms-stat-card">
+        <div class="pms-stat-header">
+            <div class="pms-stat-icon danger">⏳</div>
+        </div>
+        <div class="pms-stat-num currency">{{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(stats.pending_dues) }}</div>
+        <div class="pms-stat-label">Outstanding Receivables</div>
+        <div class="pms-stat-trend negative">Pending</div>
+    </div>
+</div>
+
+<div class="pms-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+    <div class="pms-stat-card" style="padding: 16px;">
+        <div class="pms-stat-header" style="margin-bottom:6px;"><div class="pms-stat-icon secondary">✅</div></div>
+        <div class="pms-stat-num" style="font-size: 22px;">{{ stats.available_rooms }}</div>
+        <div class="pms-stat-label">Available for Booking</div>
+    </div>
+    <div class="pms-stat-card" style="padding: 16px;">
+        <div class="pms-stat-header" style="margin-bottom:6px;"><div class="pms-stat-icon warning">🧹</div></div>
+        <div class="pms-stat-num" style="font-size: 22px;">{{ stats.cleaning_rooms }}</div>
+        <div class="pms-stat-label">Cleaning / Turnover</div>
+    </div>
+    <div class="pms-stat-card" style="padding: 16px;">
+        <div class="pms-stat-header" style="margin-bottom:6px;"><div class="pms-stat-icon info">👥</div></div>
+        <div class="pms-stat-num" style="font-size: 22px;">{{ stats.total_customers }}</div>
+        <div class="pms-stat-label">Registered Customers</div>
+    </div>
+    <div class="pms-stat-card" style="padding: 16px;">
+        <div class="pms-stat-header" style="margin-bottom:6px;"><div class="pms-stat-icon primary">🛎️</div></div>
+        <div class="pms-stat-num" style="font-size: 22px;">{{ stats.total_receptionists }}</div>
+        <div class="pms-stat-label">Active Receptionists</div>
+    </div>
+</div>
+
+<!-- ── 2. QUICK MANAGEMENT SECTIONS ── -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <!-- Recent Bookings Table -->
+    <div class="pms-card" style="margin-bottom: 0;">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">📋 Recent Bookings & Reservations</h3>
+            <a href="{{ url_for('admin.bookings') }}" class="btn-pms btn-pms-outline btn-pms-sm">View All &rarr;</a>
+        </div>
+        <div class="pms-table-container">
+            <table class="pms-table">
+                <thead>
+                    <tr>
+                        <th>Booking Ref</th>
+                        <th>Guest</th>
+                        <th>Room</th>
+                        <th>Dates</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in recent_bookings %}
+                    <tr>
+                        <td class="mono"><strong>{{ b.booking_ref }}</strong></td>
+                        <td>{{ b.guest_name }}</td>
+                        <td class="mono">{{ b.room_number or '—' }} <small style="color:var(--color-muted);">({{ b.room_type_name }})</small></td>
+                        <td class="mono"><small>{{ b.check_in_date }} to {{ b.check_out_date }}</small></td>
+                        <td class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</strong></td>
+                        <td><span class="badge-{{ b.status.replace('_', '-') }}">{{ b.status|capitalize }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Receptionist Activity Stream -->
+    <div class="pms-card" style="margin-bottom: 0;">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">🔍 Staff Activity Log</h3>
+            <a href="{{ url_for('admin.activity_logs') }}" class="btn-pms btn-pms-outline btn-pms-sm">Full Audit &rarr;</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for act in recent_activities %}
+            <div style="background: #FAF5EE; border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 12px; font-size: 0.82rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <strong style="color: var(--color-primary);">{{ act.action }}</strong>
+                    <span class="mono" style="color: var(--color-muted); font-size: 0.72rem;">{{ act.created_at[:16] }}</span>
+                </div>
+                <div style="color: var(--color-text); margin-bottom: 2px;">{{ act.details }}</div>
+                <div style="color: var(--color-muted); font-size: 0.75rem;">
+                    Staff: <strong>{{ act.user_name or 'System' }}</strong> ({{ act.user_role }})
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

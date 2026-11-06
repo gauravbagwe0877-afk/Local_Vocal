@@ -1,0 +1,66 @@
+{% extends 'customer/base_customer.html' %}
+{% block title %}Booking Confirmed — {{ booking.booking_ref }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 20px auto;">
+    <!-- Confirmation Banner -->
+    <div class="pms-card" style="text-align: center; padding: 40px 32px;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: #DCFCE7; color: #166534; font-size: 2rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            ✓
+        </div>
+
+        <h1 style="font-size: 1.85rem; margin: 0 0 8px; color: var(--color-text);">Reservation Confirmed!</h1>
+        <p style="color: var(--color-muted); margin: 0 0 20px; font-size: 0.95rem;">
+            Thank you, <strong>{{ booking.guest_name }}</strong>. Your stay has been successfully reserved with StaySmart Hotel.
+        </p>
+
+        <!-- Large Booking ID Badge -->
+        <div style="background: #FAF5EE; border: 2px dashed var(--color-primary); border-radius: 12px; padding: 18px; margin: 0 auto 24px; max-width: 380px;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-muted); font-weight: 600; letter-spacing: 0.05em; margin-bottom: 4px;">
+                Unique Booking Reference
+            </div>
+            <div class="mono" style="font-size: 1.75rem; font-weight: 700; color: var(--color-primary);">
+                {{ booking.booking_ref }}
+            </div>
+        </div>
+
+        <!-- Reservation Details Summary -->
+        <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-radius: 10px; padding: 20px; text-align: left; margin-bottom: 24px; font-size: 0.9rem; line-height: 1.6;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 8px;">
+                <span style="color: var(--color-muted);">Room Category:</span>
+                <strong>{{ booking.room_type_name }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 8px;">
+                <span style="color: var(--color-muted);">Allocated Room:</span>
+                <span class="mono"><strong>Room {{ booking.room_number or 'Assigned upon arrival' }}</strong></span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 8px;">
+                <span style="color: var(--color-muted);">Check-in Date:</span>
+                <span class="mono">{{ booking.check_in_date }} (from {{ hotel_settings.check_in_time }})</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 8px;">
+                <span style="color: var(--color-muted);">Check-out Date:</span>
+                <span class="mono">{{ booking.check_out_date }} (by {{ hotel_settings.check_out_time }})</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 8px;">
+                <span style="color: var(--color-muted);">Stay Length:</span>
+                <span class="mono">{{ booking.nights }} Night(s)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 700; color: var(--color-primary); padding-top: 4px;">
+                <span>Total Amount:</span>
+                <span class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(booking.total_amount) }}</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <a href="{{ url_for('customer.booking_receipt', booking_id=booking.id) }}" class="btn-pms btn-pms-outline">
+                🖨️ View & Print Tax Receipt
+            </a>
+            <a href="{{ url_for('customer.dashboard') }}" class="btn-pms btn-pms-primary">
+                Go to Dashboard &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

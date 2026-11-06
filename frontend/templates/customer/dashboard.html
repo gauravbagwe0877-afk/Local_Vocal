@@ -1,0 +1,116 @@
+{% extends 'customer/base_customer.html' %}
+{% block title %}Guest Dashboard — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<!-- Welcome Hero Card -->
+<div style="background: linear-gradient(135deg, rgba(181,69,27,0.1), rgba(244,162,97,0.15)); border: 1px solid var(--color-border); border-radius: var(--card-radius); padding: 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+    <div>
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.05em;">Guest Member</span>
+        <h1 style="font-size: 1.85rem; margin: 6px 0 8px; color: var(--color-text);">Welcome back, {{ guest.full_name }}</h1>
+        <p style="color: var(--color-muted); margin: 0; font-size: 0.95rem;">
+            You have completed <strong>{{ guest.total_stays }}</strong> stay(s) with StaySmart Hotel. Explore available suites or manage your bookings below.
+        </p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="{{ url_for('customer.rooms') }}" class="btn-pms btn-pms-primary">
+            <span>🔍 Reserve a Room</span>
+        </a>
+        <a href="{{ url_for('customer.bookings') }}" class="btn-pms btn-pms-outline">
+            <span>My Bookings ({{ active_bookings|length }})</span>
+        </a>
+    </div>
+</div>
+
+<!-- ── Quick Room Search Bar ── -->
+<div class="pms-card" style="padding: 24px; margin-bottom: 28px;">
+    <h3 style="margin: 0 0 16px; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+        <span>🔎 Check Live Room Availability</span>
+    </h3>
+    <form method="GET" action="{{ url_for('customer.rooms') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) 140px; gap: 16px; align-items: flex-end;">
+        <div class="pms-floating-label" style="margin-bottom: 0;">
+            <input type="date" name="check_in" value="{{ today_date }}" required placeholder=" ">
+            <label>Check-in Date</label>
+        </div>
+        <div class="pms-floating-label" style="margin-bottom: 0;">
+            <input type="date" name="check_out" value="{{ tomorrow_date }}" required placeholder=" ">
+            <label>Check-out Date</label>
+        </div>
+        <div class="pms-floating-label" style="margin-bottom: 0;">
+            <select name="guests">
+                <option value="1">1 Guest</option>
+                <option value="2" selected>2 Guests</option>
+                <option value="3">3 Guests</option>
+                <option value="4">4+ Guests</option>
+            </select>
+            <label>Guests</label>
+        </div>
+        <button type="submit" class="btn-pms btn-pms-primary" style="height: 48px; width: 100%;">
+            Search
+        </button>
+    </form>
+</div>
+
+<!-- ── Active & Upcoming Reservations ── -->
+<div class="pms-card">
+    <div class="pms-card-header">
+        <h3 class="pms-card-title">📅 Current & Upcoming Reservations</h3>
+        <a href="{{ url_for('customer.bookings') }}" class="btn-pms btn-pms-outline btn-pms-sm">View Full History &rarr;</a>
+    </div>
+
+    {% if active_bookings %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        {% for b in active_bookings %}
+        <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span class="mono" style="font-weight: 700; color: var(--color-primary); font-size: 1.05rem;">{{ b.booking_ref }}</span>
+                    <span class="badge-{{ b.status.replace('_', '-') }}">{{ b.status|capitalize }}</span>
+                </div>
+                <h4 style="margin: 0 0 6px; font-size: 1.1rem;">{{ b.room_type_name }}</h4>
+                <div style="font-size: 0.85rem; color: var(--color-muted); margin-bottom: 8px;">
+                    Room: <strong>{{ b.room_number or 'Assigned upon arrival' }}</strong>
+                </div>
+                <div style="font-size: 0.85rem; line-height: 1.5; color: var(--color-text); margin-bottom: 12px; background: #FAF5EE; padding: 8px 12px; border-radius: 6px;">
+                    🗓️ Check-In: <strong class="mono">{{ b.check_in_date }}</strong><br>
+                    🗓️ Check-Out: <strong class="mono">{{ b.check_out_date }}</strong> ({{ b.nights }} Nights)
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px;">
+                <span class="mono" style="font-weight: 700; font-size: 1.05rem;">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</span>
+                <a href="{{ url_for('customer.booking_receipt', booking_id=b.id) }}" class="btn-pms btn-pms-outline btn-pms-sm">
+                    View Receipt &rarr;
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 36px 20px; color: var(--color-muted);">
+        <p style="font-size: 1rem; margin-bottom: 16px;">You currently have no active or upcoming reservations.</p>
+        <a href="{{ url_for('customer.rooms') }}" class="btn-pms btn-pms-primary">
+            Browse Available Suites & Book Now
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── Hotel Facilities & Services ── -->
+<div class="pms-card">
+    <div class="pms-card-header">
+        <h3 class="pms-card-title">🛎️ Hotel Facilities & Complimentary Services</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+        {% for s in services %}
+        <div style="background: #FAF5EE; border: 1px solid var(--color-border); border-radius: 8px; padding: 16px;">
+            <div style="font-size: 1.8rem; margin-bottom: 8px;">{{ s.icon }}</div>
+            <h4 style="margin: 0 0 6px; font-size: 1rem;">{{ s.name }}</h4>
+            <p style="font-size: 0.8rem; color: var(--color-muted); margin: 0; line-height: 1.4;">{{ s.description }}</p>
+            <div style="margin-top: 8px; font-size: 0.75rem; font-weight: 700; color: var(--color-secondary);">
+                {% if s.price > 0 %}{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(s.price) }}{% else %}Complimentary for guests{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

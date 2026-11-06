@@ -1,0 +1,142 @@
+{% extends 'customer/base_customer.html' %}
+{% block title %}Search Available Rooms — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Search & Reserve Hotel Rooms</h1>
+        <p>Real-time room availability, photographs, facilities, and transparent price calculation.</p>
+    </div>
+</div>
+
+<!-- ── Search Filter Card ── -->
+<div class="pms-card" style="padding: 24px; margin-bottom: 28px; background: #FAF5EE;">
+    <form method="GET" action="{{ url_for('customer.rooms') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 140px; gap: 14px; align-items: flex-end;">
+        <div class="pms-floating-label" style="margin-bottom: 0;">
+            <input type="date" name="check_in" value="{{ check_in }}" required placeholder=" ">
+            <label>Check-in Date</label>
+        </div>
+        <div class="pms-floating-label" style="margin-bottom: 0;">
+            <input type="date" name="check_out" value="{{ check_out }}" required placeholder=" ">
+            <label>Check-out Date</label>
+        </div>
+        <div class="pms-floating-label" style="margin-bottom: 0;">
+            <select name="guests">
+                <option value="1" {% if guests_count == 1 %}selected{% endif %}>1 Guest</option>
+                <option value="2" {% if guests_count == 2 %}selected{% endif %}>2 Guests</option>
+                <option value="3" {% if guests_count == 3 %}selected{% endif %}>3 Guests</option>
+                <option value="4" {% if guests_count >= 4 %}selected{% endif %}>4+ Guests</option>
+            </select>
+            <label>Total Guests</label>
+        </div>
+        <div class="pms-floating-label" style="margin-bottom: 0;">
+            <select name="category_id">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+            <label>Room Category</label>
+        </div>
+        <button type="submit" class="btn-pms btn-pms-primary" style="height: 48px; width: 100%;">
+            Check Rooms
+        </button>
+    </form>
+</div>
+
+<!-- ── Search Results Summary Banner ── -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 0.95rem;">
+    <div>
+        Showing suites available from <strong class="mono">{{ check_in }}</strong> to <strong class="mono">{{ check_out }}</strong> 
+        (<strong>{{ nights }} Night{{ 's' if nights > 1 else '' }}</strong>)
+    </div>
+    <div style="color: var(--color-muted);">
+        Found <strong>{{ room_types|length }}</strong> available categories
+    </div>
+</div>
+
+<!-- ── Room Cards Grid ── -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+    {% for rt in room_types %}
+    <div class="pms-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+        <!-- Photograph -->
+        <div style="height: 220px; width: 100%; position: relative; overflow: hidden; background: #E5D5C0;">
+            {% if rt.image_url %}
+            <img src="{{ rt.image_url }}" alt="{{ rt.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 3rem;">🛏️</div>
+            {% endif %}
+            <div style="position: absolute; top: 12px; right: 12px; background: rgba(22, 163, 74, 0.9); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+                ✓ {{ rt.available_rooms_count }} Rooms Available
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 24px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <h3 style="margin: 0; font-size: 1.35rem;">{{ rt.name }}</h3>
+                    <div style="text-align: right;">
+                        <span class="mono" style="font-size: 1.35rem; font-weight: 700; color: var(--color-primary);">
+                            {{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(rt.base_rate) }}
+                        </span>
+                        <div style="font-size: 0.72rem; color: var(--color-muted);">per night</div>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.88rem; color: var(--color-muted); line-height: 1.5; margin-bottom: 12px;">
+                    {{ rt.description }}
+                </p>
+
+                <div style="font-size: 0.82rem; margin-bottom: 12px; color: var(--color-text);">
+                    👥 Max Capacity: <strong>{{ rt.max_adults }} Adults, {{ rt.max_children }} Children</strong>
+                </div>
+
+                <!-- Facilities -->
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;">
+                    {% for am in rt.amenities_list %}
+                    <span style="background: #FAF5EE; border: 1px solid var(--color-border); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; color: var(--color-text);">
+                        {{ am }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Price Breakdown Preview & Book Button -->
+            <div style="border-top: 1px solid var(--color-border); padding-top: 16px;">
+                <div style="background: #FAF5EE; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.82rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>{{ nights }} Nights @ {{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(rt.base_rate) }}:</span>
+                        <strong class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(rt.calc_subtotal) }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: var(--color-muted);">
+                        <span>Taxes (GST {{ hotel_settings.gst_rate }}%):</span>
+                        <span class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(rt.calc_tax) }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--color-primary); font-size: 0.95rem; border-top: 1px dashed var(--color-border); padding-top: 6px;">
+                        <span>Total Payable:</span>
+                        <span class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(rt.calc_total) }}</span>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('customer.book_room', room_type_id=rt.id, check_in=check_in, check_out=check_out, adults=guests_count) }}" class="btn-pms btn-pms-primary" style="width: 100%; text-align: center; justify-content: center; padding: 12px; font-size: 0.95rem;">
+                    Reserve {{ rt.name }} &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: #fff; border: 1px solid var(--color-border); border-radius: var(--card-radius);">
+        <div style="font-size: 3rem; margin-bottom: 12px;">🏨</div>
+        <h3>No rooms available for the selected dates and criteria.</h3>
+        <p style="color: var(--color-muted); max-width: 480px; margin: 0 auto 20px;">
+            All rooms may be occupied or reserved for the chosen date range. Try modifying your check-in or check-out dates.
+        </p>
+        <a href="{{ url_for('customer.rooms') }}" class="btn-pms btn-pms-outline">
+            Reset Dates
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

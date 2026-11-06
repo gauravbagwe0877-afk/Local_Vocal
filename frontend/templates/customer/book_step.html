@@ -1,0 +1,142 @@
+{% extends 'customer/base_customer.html' %}
+{% block title %}Complete Reservation — {{ room_type.name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <a href="{{ url_for('customer.rooms') }}" class="btn-pms btn-pms-outline btn-pms-sm" style="margin-bottom: 8px;">&larr; Choose Different Room</a>
+        <h1>Complete Your Reservation</h1>
+        <p>Review your itinerary, verify guest information, and choose payment mode.</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: 28px; align-items: start;">
+    <!-- Left Column: Guest Info & Payment Form -->
+    <div>
+        <form method="POST" action="{{ url_for('customer.process_booking') }}" id="customerBookingForm">
+            <input type="hidden" name="room_type_id" value="{{ room_type.id }}">
+            <input type="hidden" name="check_in_date" value="{{ check_in }}">
+            <input type="hidden" name="check_out_date" value="{{ check_out }}">
+            <input type="hidden" name="adults" value="{{ adults }}">
+            <input type="hidden" name="children" value="{{ children }}">
+
+            <!-- Guest Details Confirmation -->
+            <div class="pms-card">
+                <div class="pms-card-header">
+                    <h3 class="pms-card-title">👤 Guest Contact Details</h3>
+                </div>
+                <div style="background: #FAF5EE; border: 1px solid var(--color-border); border-radius: 8px; padding: 16px; margin-bottom: 16px; font-size: 0.9rem;">
+                    <div style="margin-bottom: 4px;"><strong>{{ guest.full_name }}</strong></div>
+                    <div style="color: var(--color-muted); line-height: 1.5;">
+                        Phone: <span class="mono">{{ guest.phone }}</span> | Email: {{ guest.email }}<br>
+                        {% if guest.address %}Address: {{ guest.address }}{% endif %}
+                    </div>
+                </div>
+
+                <div class="pms-floating-label">
+                    <textarea name="special_requests" rows="2" placeholder=" "></textarea>
+                    <label>Special Requests (e.g., quiet room, early arrival, high floor)</label>
+                </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="pms-card">
+                <div class="pms-card-header">
+                    <h3 class="pms-card-title">💳 Select Payment Mode</h3>
+                </div>
+
+                <!-- Test Gateway Notice -->
+                <div style="background: rgba(37,99,235,0.08); border-left: 3px solid var(--color-info); padding: 12px 16px; border-radius: 6px; font-size: 0.85rem; color: var(--color-text); margin-bottom: 20px;">
+                    ℹ️ <strong>Demonstration Test Gateway:</strong> Online Card and UPI transactions are processed through our simulated sandbox payment processor. An instant verified transaction ID and tax invoice will be generated.
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    <!-- Option 1: Credit / Debit Card -->
+                    <label style="border: 1px solid var(--color-border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.15s ease;">
+                        <input type="radio" name="payment_method" value="card" checked style="accent-color: var(--color-primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; font-size: 0.95rem;">Credit / Debit Card (Online Instant)</strong>
+                            <small style="color: var(--color-muted);">Visa, MasterCard, RuPay, Amex [Sandbox Test Mode]</small>
+                        </div>
+                        <span style="font-size: 1.25rem;">💳</span>
+                    </label>
+
+                    <!-- Option 2: UPI / QR Code -->
+                    <label style="border: 1px solid var(--color-border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                        <input type="radio" name="payment_method" value="upi" style="accent-color: var(--color-primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; font-size: 0.95rem;">UPI / Instant QR</strong>
+                            <small style="color: var(--color-muted);">GPay, PhonePe, Paytm, BHIM</small>
+                        </div>
+                        <span style="font-size: 1.25rem;">📱</span>
+                    </label>
+
+                    <!-- Option 3: Netbanking -->
+                    <label style="border: 1px solid var(--color-border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                        <input type="radio" name="payment_method" value="bank_transfer" style="accent-color: var(--color-primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; font-size: 0.95rem;">Net Banking / Bank Transfer</strong>
+                            <small style="color: var(--color-muted);">All major Indian banks supported</small>
+                        </div>
+                        <span style="font-size: 1.25rem;">🏦</span>
+                    </label>
+
+                    <!-- Option 4: Pay at Check-in -->
+                    <label style="border: 1px solid var(--color-border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                        <input type="radio" name="payment_method" value="hotel" style="accent-color: var(--color-primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; font-size: 0.95rem;">Pay at Hotel (Check-in)</strong>
+                            <small style="color: var(--color-muted);">Pay in cash or card when you arrive at front desk</small>
+                        </div>
+                        <span style="font-size: 1.25rem;">🏨</span>
+                    </label>
+                </div>
+
+                <div style="font-size: 0.8rem; color: var(--color-muted); margin-bottom: 20px; line-height: 1.4;">
+                    By clicking "Confirm Reservation", you agree to StaySmart Hotel's standard check-in policy and 24-hour cancellation terms.
+                </div>
+
+                <button type="submit" class="btn-pms btn-pms-primary" style="width: 100%; padding: 14px; font-size: 1.05rem;">
+                    Confirm & Reserve Suite &rarr;
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right Column: Room & Cost Summary Card -->
+    <div class="pms-card" style="position: sticky; top: 96px;">
+        <div style="height: 160px; margin: -24px -24px 16px -24px; overflow: hidden; position: relative;">
+            {% if room_type.image_url %}
+            <img src="{{ room_type.image_url }}" alt="{{ room_type.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% endif %}
+        </div>
+
+        <h3 style="margin: 0 0 4px; font-size: 1.25rem;">{{ room_type.name }}</h3>
+        <p style="font-size: 0.82rem; color: var(--color-muted); margin: 0 0 16px;">{{ room_type.description }}</p>
+
+        <div style="background: #FAF5EE; border: 1px solid var(--color-border); border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.6;">
+            <div>🗓️ <strong>Check-in:</strong> <span class="mono">{{ check_in }}</span></div>
+            <div>🗓️ <strong>Check-out:</strong> <span class="mono">{{ check_out }}</span></div>
+            <div>⏱️ <strong>Stay Duration:</strong> <span class="mono">{{ breakdown.nights }} Night(s)</span></div>
+            <div>👥 <strong>Guests:</strong> {{ adults }} Adult(s), {{ children }} Child(ren)</div>
+        </div>
+
+        <!-- Cost Breakdown Table -->
+        <div style="font-size: 0.88rem;">
+            <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                <span>{{ breakdown.nights }} Night(s) × {{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(breakdown.rate_per_night) }}</span>
+                <span class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(breakdown.subtotal) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 0; color: var(--color-muted);">
+                <span>GST Tax ({{ breakdown.gst_rate }}%)</span>
+                <span class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(breakdown.tax_amount) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0 0; font-size: 1.2rem; font-weight: 700; color: var(--color-primary); border-top: 2px solid var(--color-border); margin-top: 8px;">
+                <span>Total Amount:</span>
+                <span class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(breakdown.grand_total) }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

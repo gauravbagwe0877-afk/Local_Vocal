@@ -1,0 +1,127 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Room Availability & Inventory — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Room Availability & Inventory Status</h1>
+        <p>Inspect live room occupancy, view room details, categories, base tariffs, and amenities.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <a href="{{ url_for('receptionist.new_booking') }}" class="btn-pms btn-pms-secondary">
+            <span>+ Allocate Room Booking</span>
+        </a>
+    </div>
+</div>
+
+<!-- ── Room Categories Reference Strip ── -->
+<div class="pms-card" style="padding: 18px;">
+    <div class="pms-card-header" style="margin-bottom: 12px;">
+        <h3 class="pms-card-title">🏷️ Categories, Tariffs & Facilities</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        {% for rt in room_types %}
+        <div style="background: #FAF5EE; border: 1px solid var(--color-border); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                <h4 style="margin: 0; font-size: 1rem;">{{ rt.name }}</h4>
+                <span class="mono" style="font-weight: 700; color: var(--color-primary);">{{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(rt.base_rate) }}/nt</span>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--color-muted); margin: 0 0 6px;">{{ rt.description }}</p>
+            <div style="font-size: 0.72rem; color: var(--color-secondary); font-weight: 600;">
+                Capacity: {{ rt.max_adults }} Adults, {{ rt.max_children }} Children
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ── Filter Chips ── -->
+<div class="pms-table-toolbar">
+    <div class="pms-filter-chips">
+        <a href="{{ url_for('receptionist.rooms') }}" class="pms-chip {% if not selected_status %}active{% endif %}">
+            All Rooms ({{ rooms|length }})
+        </a>
+        <a href="{{ url_for('receptionist.rooms', status='available') }}" class="pms-chip {% if selected_status == 'available' %}active{% endif %}">
+            Available ({{ rooms|selectattr('status', 'eq', 'available')|list|length }})
+        </a>
+        <a href="{{ url_for('receptionist.rooms', status='occupied') }}" class="pms-chip {% if selected_status == 'occupied' %}active{% endif %}">
+            Occupied ({{ rooms|selectattr('status', 'eq', 'occupied')|list|length }})
+        </a>
+        <a href="{{ url_for('receptionist.rooms', status='reserved') }}" class="pms-chip {% if selected_status == 'reserved' %}active{% endif %}">
+            Reserved ({{ rooms|selectattr('status', 'eq', 'reserved')|list|length }})
+        </a>
+        <a href="{{ url_for('receptionist.rooms', status='cleaning') }}" class="pms-chip {% if selected_status == 'cleaning' %}active{% endif %}">
+            Cleaning ({{ rooms|selectattr('status', 'eq', 'cleaning')|list|length }})
+        </a>
+    </div>
+
+    <div class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Filter room or guest name..." data-target-table="#receptionistRoomsBody">
+    </div>
+</div>
+
+<!-- ── Live Table ── -->
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Room No</th>
+                    <th class="sortable">Floor</th>
+                    <th class="sortable">Category</th>
+                    <th class="sortable">Rate / Night</th>
+                    <th>Status</th>
+                    <th>Hygiene</th>
+                    <th>Current Guest</th>
+                    <th>Stay Dates</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="receptionistRoomsBody">
+                {% for r in rooms %}
+                <tr>
+                    <td class="mono"><strong>Room {{ r.room_number }}</strong></td>
+                    <td>{{ r.floor }}</td>
+                    <td>{{ r.room_type_name }}</td>
+                    <td class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(r.base_rate) }}</td>
+                    <td><span class="badge-{{ r.status }}">{{ r.status|capitalize }}</span></td>
+                    <td>
+                        <span style="font-size:0.8rem; font-weight:600; color:{% if r.housekeeping_status == 'clean' %}var(--color-secondary){% elif r.housekeeping_status == 'dirty' %}var(--color-danger){% else %}var(--color-warning){% endif %};">
+                            ● {{ r.housekeeping_status|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.current_guest_name %}
+                        <strong>{{ r.current_guest_name }}</strong><br>
+                        <small class="mono" style="color:var(--color-muted);">Ref: {{ r.booking_ref }}</small>
+                        {% else %}
+                        <span style="color:var(--color-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="mono">
+                        {% if r.check_in_date %}
+                        <small>{{ r.check_in_date }} &rarr; {{ r.check_out_date }}</small>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.status == 'available' %}
+                        <a href="{{ url_for('receptionist.new_booking') }}?room_id={{ r.id }}" class="btn-pms btn-pms-secondary btn-pms-sm">
+                            Allocate
+                        </a>
+                        {% elif r.status == 'occupied' %}
+                        <span style="font-size:0.75rem; color:var(--color-muted);">In-house</span>
+                        {% else %}
+                        <span style="font-size:0.75rem; color:var(--color-muted);">{{ r.status|capitalize }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

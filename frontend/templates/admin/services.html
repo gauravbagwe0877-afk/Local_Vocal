@@ -1,0 +1,116 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Hotel Services & Amenities — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Hotel Facilities & Guest Services</h1>
+        <p>Manage complimentary and premium services displayed across customer booking portals.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('addServiceModal')">
+            <span>+ Add Service</span>
+        </button>
+    </div>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th>Icon</th>
+                    <th class="sortable">Service Name</th>
+                    <th class="sortable">Category</th>
+                    <th>Description</th>
+                    <th class="sortable">Tariff / Fee</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td style="font-size: 1.5rem; text-align: center;">{{ s.icon }}</td>
+                    <td><strong style="font-size: 0.95rem;">{{ s.name }}</strong></td>
+                    <td><span style="font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: var(--color-muted);">{{ s.category }}</span></td>
+                    <td><small style="color: var(--color-text); line-height: 1.4;">{{ s.description }}</small></td>
+                    <td class="mono">
+                        {% if s.price > 0 %}
+                        <strong style="color: var(--color-primary);">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(s.price) }}</strong>
+                        {% else %}
+                        <span class="badge-confirmed">Complimentary</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge-{{ 'confirmed' if s.is_active else 'occupied' }}">
+                            {{ 'Active' if s.is_active else 'Hidden' }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.toggle_service', service_id=s.id) }}" style="display:inline;">
+                            <button type="submit" class="btn-pms btn-pms-outline btn-pms-sm">
+                                {{ 'Hide' if s.is_active else 'Activate' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Add Service -->
+<div id="addServiceModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 500px;">
+        <div class="pms-modal-header">
+            <h3>Add Hotel Facility / Service</h3>
+            <button class="pms-modal-close" onclick="closeModal('addServiceModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.add_service') }}">
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="text" name="name" required placeholder=" ">
+                    <label>Service Name <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="text" name="icon" value="🛎️" required placeholder=" ">
+                    <label>Emoji Icon</label>
+                </div>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <select name="category">
+                        <option value="dining" selected>Dining & Food</option>
+                        <option value="wellness">Spa & Wellness</option>
+                        <option value="transport">Transport & Cab</option>
+                        <option value="housekeeping">Laundry & Care</option>
+                        <option value="activities">Activities & Tour</option>
+                        <option value="general">General Facility</option>
+                    </select>
+                    <label>Category</label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="number" step="50" name="price" value="0.00" min="0" placeholder=" ">
+                    <label>Fee (0 for Free)</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="description" rows="2" required placeholder=" "></textarea>
+                <label>Service Highlights / Policy</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('addServiceModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Save Service</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

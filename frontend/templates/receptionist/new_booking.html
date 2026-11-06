@@ -1,0 +1,170 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Create Customer Booking — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <a href="{{ url_for('receptionist.bookings') }}" class="btn-pms btn-pms-outline btn-pms-sm" style="margin-bottom: 8px;">&larr; Back to Reservations</a>
+        <h1>Create Front Desk Booking</h1>
+        <p>Book a room for a walk-in guest or existing customer with real-time rate & tax calculation.</p>
+    </div>
+</div>
+
+<div class="pms-card" style="max-width: 800px;">
+    <form method="POST" action="{{ url_for('receptionist.new_booking') }}">
+        <!-- 1. Guest Selection -->
+        <div class="pms-form-section-title">1. Guest Identification</div>
+        <div class="pms-floating-label">
+            <select name="guest_id" id="receptionistGuestSelect" onchange="toggleNewGuest(this.value)" required>
+                <option value="new" selected>+ Register New Customer</option>
+                {% for g in guests %}
+                <option value="{{ g.id }}">{{ g.full_name }} ({{ g.phone }}) — {{ g.email }}</option>
+                {% endfor %}
+            </select>
+            <label>Select Existing Guest or Register New <span class="pms-required-star">*</span></label>
+        </div>
+
+        <div id="newGuestContainer">
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="text" name="new_guest_name" id="newGuestNameInput" required placeholder=" ">
+                    <label>Guest Full Name <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="tel" name="new_guest_phone" id="newGuestPhoneInput" required placeholder=" ">
+                    <label>Mobile Number <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+            <div class="pms-floating-label">
+                <input type="email" name="new_guest_email" placeholder=" ">
+                <label>Email Address</label>
+            </div>
+        </div>
+
+        <hr class="pms-form-divider">
+
+        <!-- 2. Stay Dates & Room Selection -->
+        <div class="pms-form-section-title">2. Stay Dates & Room Allocation</div>
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <input type="date" name="check_in_date" id="recepCheckIn" value="{{ today_date }}" required placeholder=" " onchange="updateEstimatedCost()">
+                <label>Check-in Date <span class="pms-required-star">*</span></label>
+            </div>
+            <div class="pms-floating-label">
+                <input type="date" name="check_out_date" id="recepCheckOut" required placeholder=" " onchange="updateEstimatedCost()">
+                <label>Check-out Date <span class="pms-required-star">*</span></label>
+            </div>
+        </div>
+
+        <div class="pms-floating-label">
+            <select name="room_id" id="recepRoomSelect" required onchange="updateEstimatedCost()">
+                <option value="" disabled selected>Select Room</option>
+                {% for r in rooms %}
+                <option value="{{ r.id }}" data-rate="{{ r.base_rate }}" {% if r.status != 'available' %}disabled{% endif %}>
+                    Room {{ r.room_number }} ({{ r.room_type_name }} - {{ r.floor }}) — {{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(r.base_rate) }}/night {% if r.status != 'available' %}[{{ r.status|upper }}]{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <label>Allocated Room <span class="pms-required-star">*</span></label>
+        </div>
+
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <input type="number" name="adults" value="1" min="1" max="6" required placeholder=" ">
+                <label>Adults</label>
+            </div>
+            <div class="pms-floating-label">
+                <input type="number" name="children" value="0" min="0" max="4" placeholder=" ">
+                <label>Children</label>
+            </div>
+        </div>
+
+        <hr class="pms-form-divider">
+
+        <!-- 3. Billing & Payment -->
+        <div class="pms-form-section-title">3. Tariff Breakdown & Advance Payment</div>
+        <div style="background:#FAF5EE; border:1px solid var(--color-border); border-radius:var(--element-radius); padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.95rem;">
+                <span>Room Charges:</span>
+                <strong class="mono" id="estRoomSubtotal">{{ hotel_settings.currency_symbol }}0.00</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.85rem; color:var(--color-muted);">
+                <span>GST ({{ hotel_settings.gst_rate }}%):</span>
+                <span class="mono" id="estTaxAmt">{{ hotel_settings.currency_symbol }}0.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:1.1rem; font-weight:700; color:var(--color-primary); border-top:1px dashed var(--color-border); padding-top:8px;">
+                <span>Total Payable:</span>
+                <span class="mono" id="estGrandTotal">{{ hotel_settings.currency_symbol }}0.00</span>
+            </div>
+        </div>
+
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <input type="number" step="0.01" name="advance_paid" value="0.00" min="0" placeholder=" ">
+                <label>Advance Payment Collected ({{ hotel_settings.currency_symbol }})</label>
+            </div>
+            <div class="pms-floating-label">
+                <select name="payment_method">
+                    <option value="cash" selected>Cash</option>
+                    <option value="card">Card (POS Terminal)</option>
+                    <option value="upi">UPI (GPay / PhonePe / Paytm)</option>
+                    <option value="bank_transfer">Bank Transfer / NEFT</option>
+                </select>
+                <label>Payment Method</label>
+            </div>
+        </div>
+
+        <div class="pms-floating-label">
+            <textarea name="special_requests" rows="2" placeholder=" "></textarea>
+            <label>Special Guest Requests / Preferences</label>
+        </div>
+
+        <div class="pms-form-actions">
+            <button type="submit" class="btn-pms btn-pms-secondary btn-full-mobile">
+                Confirm Reservation & Generate Receipt &rarr;
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleNewGuest(val) {
+    const container = document.getElementById('newGuestContainer');
+    const nameInput = document.getElementById('newGuestNameInput');
+    const phoneInput = document.getElementById('newGuestPhoneInput');
+    if (val === 'new') {
+        container.style.display = 'block';
+        nameInput.required = true;
+        phoneInput.required = true;
+    } else {
+        container.style.display = 'none';
+        nameInput.required = false;
+        phoneInput.required = false;
+    }
+}
+
+function updateEstimatedCost() {
+    const cin = new Date(document.getElementById('recepCheckIn').value);
+    const cout = new Date(document.getElementById('recepCheckOut').value);
+    const sel = document.getElementById('recepRoomSelect');
+    const opt = sel.options[sel.selectedIndex];
+
+    if (cin && cout && cout > cin && opt && opt.dataset.rate) {
+        const diff = Math.abs(cout - cin);
+        const nights = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        const rate = parseFloat(opt.dataset.rate);
+        const sub = nights * rate;
+        const gst = parseFloat("{{ hotel_settings.gst_rate }}") || 12;
+        const tax = sub * (gst / 100);
+        const grand = sub + tax;
+
+        document.getElementById('estRoomSubtotal').textContent = "{{ hotel_settings.currency_symbol }}" + sub.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('estTaxAmt').textContent = "{{ hotel_settings.currency_symbol }}" + tax.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('estGrandTotal').textContent = "{{ hotel_settings.currency_symbol }}" + grand.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    }
+}
+</script>
+{% endblock %}
+

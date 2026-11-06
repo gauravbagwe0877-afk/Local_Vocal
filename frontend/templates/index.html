@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+{% block title %}Local Vocal — Discover Sawantwadi's Best Hotels & Cafes{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-bg">
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+        <div class="hero-orb hero-orb-3"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-eyebrow">
+            <span class="eyebrow-dot"></span>
+            Discover Sindhudurg's Hidden Gems
+        </div>
+        <h1 class="hero-title">
+            Where <em>Sawantwadi</em><br>Speaks for Itself
+        </h1>
+        <p class="hero-desc">Real reviews from real locals. Explore the finest hotels, cafes, and eateries tucked along the Konkan coast.</p>
+        <form class="hero-search" method="GET" action="{{ url_for('index') }}">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" name="search" placeholder="Search hotels, cafes, restaurants…" value="{{ search }}" class="search-input">
+                <button type="submit" class="btn btn-primary search-btn">Search</button>
+            </div>
+        </form>
+        <div class="hero-stats">
+            <div class="stat"><span class="stat-num">{{ places|length }}</span><span class="stat-label">Places</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num">{{ categories|length }}</span><span class="stat-label">Categories</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num">100%</span><span class="stat-label">Local Voices</span></div>
+        </div>
+    </div>
+    <div class="hero-scroll">
+        <div class="scroll-line"></div>
+        <span>Scroll</span>
+    </div>
+</section>
+
+<!-- StaySmart Hotel & Suites Quick Reservation Bar -->
+<section style="background: linear-gradient(135deg, #2D6A4F 0%, #1b4332 100%); padding: 32px 24px; margin-top: -30px; position: relative; z-index: 10; border-radius: 16px; max-width: 1140px; margin-left: auto; margin-right: auto; box-shadow: 0 16px 36px rgba(45,106,79,0.28); margin-bottom: 40px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; color: #fff;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="font-size: 1.4rem;">🏨</span>
+                <h3 style="margin: 0; font-family: var(--font-headings); font-size: 1.4rem; color: #fff; letter-spacing: -0.01em;">StaySmart Hotel & Suites</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.88rem; color: rgba(255,255,255,0.85);">Book your luxury room directly for the best guaranteed tariffs & complimentary breakfast</p>
+        </div>
+        <form method="GET" action="{{ url_for('customer.rooms') }}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-In</label>
+                <input type="date" name="check_in" id="quickCheckIn" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-Out</label>
+                <input type="date" name="check_out" id="quickCheckOut" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Guests</label>
+                <select name="guests" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+                    <option value="1">1 Guest</option>
+                    <option value="2" selected>2 Guests</option>
+                    <option value="3">3 Guests</option>
+                    <option value="4">4+ Guests</option>
+                </select>
+            </div>
+            <button type="submit" style="background: #B5451B; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(181,69,27,0.35); transition: transform 0.15s ease;">
+                <span>Search Rooms</span> &rarr;
+            </button>
+        </form>
+    </div>
+</section>
+<script>
+    (function(){
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const cin = document.getElementById('quickCheckIn');
+        const cout = document.getElementById('quickCheckOut');
+        if (cin && !cin.value) cin.value = today;
+        if (cout && !cout.value) cout.value = tomorrow;
+    })();
+</script>
+
+<!-- StaySmart Hotel & Suites Quick Reservation Bar -->
+<section style="background: linear-gradient(135deg, #2D6A4F 0%, #1b4332 100%); padding: 32px 16px; margin-top: -24px; position: relative; z-index: 10; border-radius: 16px; max-width: 1200px; margin-left: auto; margin-right: auto; box-shadow: 0 12px 32px rgba(45,106,79,0.25);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; color: #fff;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="font-size: 1.4rem;">🏨</span>
+                <h3 style="margin: 0; font-family: var(--font-headings); font-size: 1.4rem; color: #fff; letter-spacing: -0.01em;">StaySmart Hotel & Suites</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.88rem; color: rgba(255,255,255,0.85);">Book your luxury room directly for the best guaranteed tariffs & complimentary breakfast</p>
+        </div>
+        <form method="GET" action="{{ url_for('customer.rooms') }}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-In</label>
+                <input type="date" name="check_in" id="quickCheckIn" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-Out</label>
+                <input type="date" name="check_out" id="quickCheckOut" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Guests</label>
+                <select name="guests" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+                    <option value="1">1 Guest</option>
+                    <option value="2" selected>2 Guests</option>
+                    <option value="3">3 Guests</option>
+                    <option value="4">4+ Guests</option>
+                </select>
+            </div>
+            <button type="submit" style="background: #B5451B; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(181,69,27,0.35); transition: transform 0.15s ease;">
+                <span>Search Rooms</span> &rarr;
+            </button>
+        </form>
+    </div>
+</section>
+<script>
+    (function(){
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const cin = document.getElementById('quickCheckIn');
+        const cout = document.getElementById('quickCheckOut');
+        if (cin && !cin.value) cin.value = today;
+        if (cout && !cout.value) cout.value = tomorrow;
+    })();
+</script>
+
+<!-- Featured Places -->
+{% if featured and not search and not selected_category %}
+<section class="section section-featured">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-tag">✦ Editor's Choice</div>
+            <h2 class="section-title">Top Picks in Sawantwadi</h2>
+            <p class="section-desc">Hand-picked places with the highest community ratings</p>
+        </div>
+        <div class="featured-grid">
+            {% for place in featured %}
+            <a href="{{ url_for('place_detail', place_id=place.id) }}" class="featured-card">
+                <div class="featured-img-wrap">
+                    <img src="{{ place.image_url or 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' }}"
+                         alt="{{ place.name }}" class="featured-img" loading="lazy">
+                    <div class="featured-overlay"></div>
+                    <div class="featured-badge">{{ place.category_icon }} {{ place.category_name }}</div>
+                    <div class="featured-price">{{ place.price_range }}</div>
+                </div>
+                <div class="featured-body">
+                    <h3 class="featured-name">{{ place.name }}</h3>
+                    <p class="featured-desc">{{ place.description[:90] }}…</p>
+                    <div class="featured-meta">
+                        <div class="stars-display">
+                            {% set rating = place.avg_rating or 0 %}
+                            {% for i in range(1, 6) %}
+                                <span class="star {% if i <= rating %}filled{% elif i <= rating + 0.5 %}half{% endif %}">★</span>
+                            {% endfor %}
+                            <span class="rating-text">{{ '%.1f'|format(rating) if rating else 'New' }}</span>
+                        </div>
+                        <span class="review-count">{{ place.review_count }} review{% if place.review_count != 1 %}s{% endif %}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- StaySmart Hotel & Suites Quick Reservation Bar -->
+<section style="background: linear-gradient(135deg, #2D6A4F 0%, #1b4332 100%); padding: 32px 16px; margin-top: -24px; position: relative; z-index: 10; border-radius: 16px; max-width: 1200px; margin-left: auto; margin-right: auto; box-shadow: 0 12px 32px rgba(45,106,79,0.25);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; color: #fff;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="font-size: 1.4rem;">🏨</span>
+                <h3 style="margin: 0; font-family: var(--font-headings); font-size: 1.4rem; color: #fff; letter-spacing: -0.01em;">StaySmart Hotel & Suites</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.88rem; color: rgba(255,255,255,0.85);">Book your luxury room directly for the best guaranteed tariffs & complimentary breakfast</p>
+        </div>
+        <form method="GET" action="{{ url_for('customer.rooms') }}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-In</label>
+                <input type="date" name="check_in" id="quickCheckIn" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-Out</label>
+                <input type="date" name="check_out" id="quickCheckOut" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Guests</label>
+                <select name="guests" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+                    <option value="1">1 Guest</option>
+                    <option value="2" selected>2 Guests</option>
+                    <option value="3">3 Guests</option>
+                    <option value="4">4+ Guests</option>
+                </select>
+            </div>
+            <button type="submit" style="background: #B5451B; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(181,69,27,0.35); transition: transform 0.15s ease;">
+                <span>Search Rooms</span> &rarr;
+            </button>
+        </form>
+    </div>
+</section>
+<script>
+    (function(){
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const cin = document.getElementById('quickCheckIn');
+        const cout = document.getElementById('quickCheckOut');
+        if (cin && !cin.value) cin.value = today;
+        if (cout && !cout.value) cout.value = tomorrow;
+    })();
+</script>
+{% endif %}
+
+<!-- Categories Filter -->
+<section class="section section-browse">
+    <div class="container">
+        <div class="browse-header">
+            <div class="section-header">
+                <div class="section-tag">✦ Browse</div>
+                <h2 class="section-title">
+                    {% if search %}Results for "{{ search }}"
+                    {% elif selected_category %}{{ categories|selectattr('id','eq', selected_category|int)|map(attribute='name')|first|default('Category') }}
+                    {% else %}All Places{% endif %}
+                </h2>
+            </div>
+            <div class="filter-bar">
+                <a href="{{ url_for('index') }}{% if search %}?search={{ search }}{% endif %}"
+                   class="filter-pill {% if not selected_category %}active{% endif %}">
+                    All
+                </a>
+                {% for cat in categories %}
+                <a href="{{ url_for('index') }}?category={{ cat.id }}{% if search %}&search={{ search }}{% endif %}"
+                   class="filter-pill {% if selected_category|int == cat.id %}active{% endif %}">
+                    {{ cat.icon }} {{ cat.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if places %}
+        <div class="places-grid" id="placesGrid">
+            {% for place in places %}
+            <a href="{{ url_for('place_detail', place_id=place.id) }}" class="place-card" data-name="{{ place.name }}">
+                <div class="card-img-wrap">
+                    <img src="{{ place.image_url or 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' }}"
+                         alt="{{ place.name }}" class="card-img" loading="lazy">
+                    <span class="card-category-badge">{{ place.category_icon }}</span>
+                    <span class="card-price">{{ place.price_range }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <h3 class="card-name">{{ place.name }}</h3>
+                        <div class="card-rating">
+                            <span class="star filled">★</span>
+                            <span class="rating-val">{{ '%.1f'|format(place.avg_rating) if place.avg_rating else '—' }}</span>
+                        </div>
+                    </div>
+                    <p class="card-desc">{{ place.description[:80] if place.description else 'A wonderful place in Sawantwadi.' }}…</p>
+                    <div class="card-footer">
+                        <span class="card-category">{{ place.category_name }}</span>
+                        <span class="card-reviews">{{ place.review_count }} review{% if place.review_count != 1 %}s{% endif %}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>No places found</h3>
+            <p>Try a different search term or browse all categories.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Clear Filters</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- StaySmart Hotel & Suites Quick Reservation Bar -->
+<section style="background: linear-gradient(135deg, #2D6A4F 0%, #1b4332 100%); padding: 32px 16px; margin-top: -24px; position: relative; z-index: 10; border-radius: 16px; max-width: 1200px; margin-left: auto; margin-right: auto; box-shadow: 0 12px 32px rgba(45,106,79,0.25);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; color: #fff;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="font-size: 1.4rem;">🏨</span>
+                <h3 style="margin: 0; font-family: var(--font-headings); font-size: 1.4rem; color: #fff; letter-spacing: -0.01em;">StaySmart Hotel & Suites</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.88rem; color: rgba(255,255,255,0.85);">Book your luxury room directly for the best guaranteed tariffs & complimentary breakfast</p>
+        </div>
+        <form method="GET" action="{{ url_for('customer.rooms') }}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-In</label>
+                <input type="date" name="check_in" id="quickCheckIn" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-Out</label>
+                <input type="date" name="check_out" id="quickCheckOut" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Guests</label>
+                <select name="guests" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+                    <option value="1">1 Guest</option>
+                    <option value="2" selected>2 Guests</option>
+                    <option value="3">3 Guests</option>
+                    <option value="4">4+ Guests</option>
+                </select>
+            </div>
+            <button type="submit" style="background: #B5451B; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(181,69,27,0.35); transition: transform 0.15s ease;">
+                <span>Search Rooms</span> &rarr;
+            </button>
+        </form>
+    </div>
+</section>
+<script>
+    (function(){
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const cin = document.getElementById('quickCheckIn');
+        const cout = document.getElementById('quickCheckOut');
+        if (cin && !cin.value) cin.value = today;
+        if (cout && !cout.value) cout.value = tomorrow;
+    })();
+</script>
+
+<!-- CTA Banner -->
+{% if not session.get('user_id') %}
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-card">
+            <div class="cta-content">
+                <div class="cta-tag">Join the Community</div>
+                <h2>Be the Local Voice</h2>
+                <p>Share your honest experiences. Help travellers and locals discover the best Sawantwadi has to offer.</p>
+                <div class="cta-actions">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Create Account</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg">Sign In</a>
+                </div>
+            </div>
+            <div class="cta-decoration">
+                <div class="cta-orb"></div>
+                <div class="cta-emoji-stack">
+                    <span>🏨</span><span>☕</span><span>🍽️</span><span>⭐</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- StaySmart Hotel & Suites Quick Reservation Bar -->
+<section style="background: linear-gradient(135deg, #2D6A4F 0%, #1b4332 100%); padding: 32px 16px; margin-top: -24px; position: relative; z-index: 10; border-radius: 16px; max-width: 1200px; margin-left: auto; margin-right: auto; box-shadow: 0 12px 32px rgba(45,106,79,0.25);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; color: #fff;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="font-size: 1.4rem;">🏨</span>
+                <h3 style="margin: 0; font-family: var(--font-headings); font-size: 1.4rem; color: #fff; letter-spacing: -0.01em;">StaySmart Hotel & Suites</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.88rem; color: rgba(255,255,255,0.85);">Book your luxury room directly for the best guaranteed tariffs & complimentary breakfast</p>
+        </div>
+        <form method="GET" action="{{ url_for('customer.rooms') }}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-In</label>
+                <input type="date" name="check_in" id="quickCheckIn" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Check-Out</label>
+                <input type="date" name="check_out" id="quickCheckOut" required style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #F4A261; margin-bottom: 4px;">Guests</label>
+                <select name="guests" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: #fff; color: #1A1A1A; font-size: 0.88rem;">
+                    <option value="1">1 Guest</option>
+                    <option value="2" selected>2 Guests</option>
+                    <option value="3">3 Guests</option>
+                    <option value="4">4+ Guests</option>
+                </select>
+            </div>
+            <button type="submit" style="background: #B5451B; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(181,69,27,0.35); transition: transform 0.15s ease;">
+                <span>Search Rooms</span> &rarr;
+            </button>
+        </form>
+    </div>
+</section>
+<script>
+    (function(){
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const cin = document.getElementById('quickCheckIn');
+        const cout = document.getElementById('quickCheckOut');
+        if (cin && !cin.value) cin.value = today;
+        if (cout && !cout.value) cout.value = tomorrow;
+    })();
+</script>
+{% endif %}
+
+{% endblock %}

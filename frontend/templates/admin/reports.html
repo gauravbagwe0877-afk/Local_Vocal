@@ -1,0 +1,128 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Booking & Revenue Reports — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header no-print">
+    <div>
+        <h1>Hotel Performance & Booking Reports</h1>
+        <p>Operational analytics, net revenues, reservations, and payment settlements.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-outline" onclick="window.print()">
+            <span>🖨️ Print Report</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── Period Selector ── -->
+<div class="pms-table-toolbar no-print">
+    <div class="pms-filter-chips">
+        <a href="{{ url_for('admin.reports', period='daily') }}" class="pms-chip {% if period == 'daily' %}active{% endif %}">
+            📅 Daily Report (Today)
+        </a>
+        <a href="{{ url_for('admin.reports', period='weekly') }}" class="pms-chip {% if period == 'weekly' %}active{% endif %}">
+            📊 Weekly Report (Last 7 Days)
+        </a>
+        <a href="{{ url_for('admin.reports', period='monthly') }}" class="pms-chip {% if period == 'monthly' %}active{% endif %}">
+            📈 Monthly Report (Last 30 Days)
+        </a>
+    </div>
+    <div style="font-size: 0.85rem; color: var(--color-muted); font-family: var(--font-mono);">
+        Reporting Window: <strong>{{ report.start_date }}</strong> to <strong>{{ report.end_date }}</strong>
+    </div>
+</div>
+
+<!-- ── Stat Cards for Period ── -->
+<div class="pms-stats-grid">
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon primary">📅</div></div>
+        <div class="pms-stat-num">{{ report.bookings_count }}</div>
+        <div class="pms-stat-label">Bookings Registered ({{ period|title }})</div>
+    </div>
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon secondary">💰</div></div>
+        <div class="pms-stat-num currency">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(report.revenue_total) }}</div>
+        <div class="pms-stat-label">Gross Collections Received</div>
+    </div>
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon danger">💸</div></div>
+        <div class="pms-stat-num currency">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(report.expenses_total) }}</div>
+        <div class="pms-stat-label">Operational Expenses Recorded</div>
+    </div>
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon {% if report.net_profit >= 0 %}secondary{% else %}danger{% endif %}">📊</div></div>
+        <div class="pms-stat-num currency" style="color: {% if report.net_profit >= 0 %}var(--color-secondary){% else %}var(--color-danger){% endif %};">
+            {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(report.net_profit) }}
+        </div>
+        <div class="pms-stat-label">Net Operating Margin ({{ period|title }})</div>
+    </div>
+</div>
+
+<!-- ── Methods Breakdown & Bookings ── -->
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 24px;">
+    <!-- Methods Summary -->
+    <div class="pms-card" style="margin-bottom: 0;">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">💳 Collections by Method</h3>
+        </div>
+        <div class="pms-table-container">
+            <table class="pms-table">
+                <thead>
+                    <tr><th>Method</th><th>Txns</th><th style="text-align:right;">Total</th></tr>
+                </thead>
+                <tbody>
+                    {% for m in methods %}
+                    <tr>
+                        <td style="text-transform: uppercase; font-weight: 600;">{{ m.method }}</td>
+                        <td class="mono">{{ m.count }}</td>
+                        <td class="mono" style="text-align: right; font-weight: 700; color: var(--color-secondary);">
+                            {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(m.total) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align:center; color:var(--color-muted);">No payments in period.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bookings in Period -->
+    <div class="pms-card" style="margin-bottom: 0;">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">📋 Period Booking Ledger</h3>
+        </div>
+        <div class="pms-table-container">
+            <table class="pms-table">
+                <thead>
+                    <tr>
+                        <th>Booking Ref</th>
+                        <th>Guest</th>
+                        <th>Room</th>
+                        <th>Check-in</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td class="mono"><strong>{{ b.booking_ref }}</strong></td>
+                        <td>{{ b.guest_name }}</td>
+                        <td class="mono">{{ b.room_number or '—' }}</td>
+                        <td class="mono">{{ b.check_in_date }}</td>
+                        <td><span class="badge-{{ b.status.replace('_', '-') }}">{{ b.status|capitalize }}</span></td>
+                        <td class="mono" style="text-align:right; font-weight:700;">
+                            {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align:center; color:var(--color-muted);">No bookings during this period.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

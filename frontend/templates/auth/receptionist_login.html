@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Receptionist Desk Login — StaySmart Hotel{% endblock %}
+
+{% block content %}
+<div class="auth-page" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 40px 16px;">
+    <div style="background: var(--color-surface); border: 2px solid var(--color-secondary); border-radius: 16px; box-shadow: 0 16px 40px rgba(45,106,79,0.12); max-width: 440px; width: 100%; padding: 36px; box-sizing: border-box;">
+        
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 52px; height: 52px; border-radius: 12px; background: var(--color-secondary); color: #fff; font-size: 1.6rem; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 12px;">
+                🛎️
+            </div>
+            <h2 style="font-family: var(--font-headings); margin: 0 0 6px; font-size: 1.6rem; color: var(--color-secondary);">Receptionist Portal</h2>
+            <p style="color: var(--color-muted); font-size: 0.88rem; margin: 0;">StaySmart Front Desk & Guest Operations</p>
+        </div>
+
+        <div style="background: rgba(45,106,79,0.08); border-left: 3px solid var(--color-secondary); padding: 10px 14px; border-radius: 6px; font-size: 0.8rem; color: var(--color-text); margin-bottom: 20px;">
+            📋 <strong>Front Desk Access:</strong> Check-ins, reservations, room availability, and guest billing.
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.receptionist_login') }}">
+            <div class="pms-floating-label">
+                <input type="text" name="username" required placeholder=" " autofocus value="receptionist">
+                <label>Staff Username or Email</label>
+            </div>
+
+            <div class="pms-floating-label" style="margin-top: 16px;">
+                <input type="password" name="password" required placeholder=" " value="receptionist123">
+                <label>Staff Password</label>
+            </div>
+
+            <button type="submit" class="btn-pms btn-pms-secondary" style="width: 100%; padding: 12px; font-size: 0.95rem; margin-top: 12px; background: var(--color-secondary); border: none;">
+                Sign In to Reception Desk &rarr;
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.82rem; color: var(--color-muted); border-top: 1px solid var(--color-border); padding-top: 16px; display: flex; justify-content: space-between;">
+            <a href="{{ url_for('auth.customer_login') }}" style="color: var(--color-muted); text-decoration: none;">Customer Portal</a>
+            <a href="{{ url_for('auth.admin_login') }}" style="color: var(--color-primary); text-decoration: none;">Admin Portal</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

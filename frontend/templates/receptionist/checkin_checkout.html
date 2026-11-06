@@ -1,0 +1,103 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Check-in & Check-out Console — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Guest Check-in & Check-out Console</h1>
+        <p>Rapid guest processing, key assignment, departure bill reconciliation, and room cleaning dispatch.</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Column 1: Ready to Check-in -->
+    <div class="pms-card">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">🛬 Ready to Check-in ({{ checkins|length }})</h3>
+        </div>
+        {% if checkins %}
+        <div class="pms-table-container">
+            <table class="pms-table">
+                <thead>
+                    <tr>
+                        <th>Guest</th>
+                        <th>Room</th>
+                        <th>Dates</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in checkins %}
+                    <tr>
+                        <td>
+                            <strong>{{ b.guest_name }}</strong><br>
+                            <small class="mono" style="color:var(--color-muted);">{{ b.guest_phone }}</small>
+                        </td>
+                        <td class="mono"><strong>Room {{ b.room_number or 'Unassigned' }}</strong></td>
+                        <td class="mono"><small>{{ b.check_in_date }} &rarr; {{ b.check_out_date }}</small></td>
+                        <td>
+                            <form method="POST" action="{{ url_for('receptionist.process_checkin', booking_id=b.id) }}">
+                                <button type="submit" class="btn-pms btn-pms-secondary btn-pms-sm">
+                                    Check In Guest
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color:var(--color-muted); padding:20px; font-size:0.9rem;">No pending check-ins.</p>
+        {% endif %}
+    </div>
+
+    <!-- Column 2: In-House Guests Ready for Checkout -->
+    <div class="pms-card">
+        <div class="pms-card-header">
+            <h3 class="pms-card-title">🛫 In-House Guests ({{ stays|length }})</h3>
+        </div>
+        {% if stays %}
+        <div class="pms-table-container">
+            <table class="pms-table">
+                <thead>
+                    <tr>
+                        <th>Guest</th>
+                        <th>Room</th>
+                        <th>Check-out Due</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in stays %}
+                    <tr>
+                        <td>
+                            <strong>{{ b.guest_name }}</strong><br>
+                            <small class="mono" style="color:var(--color-muted);">{{ b.booking_ref }}</small>
+                        </td>
+                        <td class="mono"><strong>Room {{ b.room_number }}</strong></td>
+                        <td class="mono">{{ b.check_out_date }}</td>
+                        <td>
+                            <div class="pms-table-actions">
+                                <a href="{{ url_for('receptionist.booking_receipt', booking_id=b.id) }}" class="btn-pms btn-pms-outline btn-pms-sm">
+                                    Bill
+                                </a>
+                                <form method="POST" action="{{ url_for('receptionist.process_checkout', booking_id=b.id) }}">
+                                    <button type="submit" class="btn-pms btn-pms-primary btn-pms-sm">
+                                        Check Out
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color:var(--color-muted); padding:20px; font-size:0.9rem;">No in-house guests currently checked in.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

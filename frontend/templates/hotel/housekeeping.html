@@ -1,0 +1,196 @@
+{% extends 'hotel/base_hotel.html' %}
+{% block title %}Housekeeping — {{ hotel_settings.hotel_name }} PMS{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Housekeeping & Hygiene Management</h1>
+        <p>Assign cleaning tasks, inspect room sanitation standards, and keep room rack status refreshed.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('assignTaskModal')">
+            <span>+ Assign Task</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── 1. ROOM HYGIENE OVERVIEW ── -->
+<div class="pms-card" style="padding: 18px;">
+    <div class="pms-card-header" style="margin-bottom: 12px;">
+        <h3 class="pms-card-title">🧼 Floor Room Cleanliness Rack</h3>
+        <div style="display:flex; gap:12px; font-size:0.85rem;">
+            <span><strong style="color:var(--color-secondary);">● Clean:</strong> {{ rooms|selectattr('housekeeping_status','eq','clean')|list|length }}</span>
+            <span><strong style="color:var(--color-danger);">● Dirty:</strong> {{ rooms|selectattr('housekeeping_status','eq','dirty')|list|length }}</span>
+            <span><strong style="color:var(--color-warning);">● Inspecting:</strong> {{ rooms|selectattr('housekeeping_status','eq','inspecting')|list|length }}</span>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;">
+        {% for r in rooms %}
+        <div style="background:var(--color-surface); border:1px solid var(--color-border); border-left: 4px solid {% if r.housekeeping_status == 'clean' %}var(--color-secondary){% elif r.housekeeping_status == 'dirty' %}var(--color-danger){% else %}var(--color-warning){% endif %}; border-radius:6px; padding:8px 10px;">
+            <div class="mono" style="font-weight:700; font-size:1rem;">{{ r.room_number }}</div>
+            <div style="font-size:0.7rem; text-transform:capitalize; font-weight:600; color:{% if r.housekeeping_status == 'clean' %}var(--color-secondary){% elif r.housekeeping_status == 'dirty' %}var(--color-danger){% else %}var(--color-warning){% endif %};">
+                {{ r.housekeeping_status }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ── 2. TASKS FILTER CHIPS & TOOLBAR ── -->
+<div class="pms-table-toolbar">
+    <div class="pms-filter-chips">
+        <a href="{{ url_for('hotel.housekeeping') }}" class="pms-chip {% if not selected_status or selected_status == 'all' %}active{% endif %}">
+            All Tasks ({{ counts.all }})
+        </a>
+        <a href="{{ url_for('hotel.housekeeping', status='pending') }}" class="pms-chip {% if selected_status == 'pending' %}active{% endif %}">
+            Pending ({{ counts.pending }})
+        </a>
+        <a href="{{ url_for('hotel.housekeeping', status='in_progress') }}" class="pms-chip {% if selected_status == 'in_progress' %}active{% endif %}">
+            In Progress ({{ counts.in_progress }})
+        </a>
+        <a href="{{ url_for('hotel.housekeeping', status='completed') }}" class="pms-chip {% if selected_status == 'completed' %}active{% endif %}">
+            Completed ({{ counts.completed }})
+        </a>
+        <a href="{{ url_for('hotel.housekeeping', status='inspected') }}" class="pms-chip {% if selected_status == 'inspected' %}active{% endif %}">
+            Inspected ({{ counts.inspected }})
+        </a>
+    </div>
+
+    <div class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search task or room..." data-target-table="#hkTableBody">
+    </div>
+</div>
+
+<!-- ── 3. HOUSEKEEPING TASKS DATA TABLE ── -->
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Task ID</th>
+                    <th class="sortable">Room</th>
+                    <th class="sortable">Task Type</th>
+                    <th class="sortable">Priority</th>
+                    <th class="sortable">Assigned To</th>
+                    <th>Instructions / Notes</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="hkTableBody">
+                {% for t in tasks %}
+                <tr>
+                    <td class="mono"><strong>#HK-{{ t.id }}</strong></td>
+                    <td class="mono"><strong>Room {{ t.room_number }}</strong> ({{ t.floor }})</td>
+                    <td style="text-transform: capitalize;">{{ t.task_type.replace('_', ' ') }}</td>
+                    <td>
+                        <span style="font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:10px; background-color:{% if t.priority == 'urgent' %}#FEE2E2; color:#991B1B;{% elif t.priority == 'high' %}#FEF9C3; color:#854D0E;{% else %}#F3F4F6; color:#374151;{% endif %};">
+                            {{ t.priority|upper }}
+                        </span>
+                    </td>
+                    <td>{{ t.staff_name or 'Unassigned' }}</td>
+                    <td><small>{{ t.notes or 'Standard cleaning protocol' }}</small></td>
+                    <td>
+                        <span class="badge-{{ 'cleaning' if t.status == 'in_progress' else ('confirmed' if t.status in ['completed', 'inspected'] else 'pending') }}">
+                            {{ t.status.replace('_', ' ').capitalize() }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="pms-table-actions">
+                            {% if t.status == 'pending' %}
+                            <form method="POST" action="{{ url_for('hotel.update_housekeeping_status', task_id=t.id) }}">
+                                <input type="hidden" name="status" value="in_progress">
+                                <button type="submit" class="btn-pms btn-pms-outline btn-pms-sm">Start</button>
+                            </form>
+                            {% elif t.status == 'in_progress' %}
+                            <form method="POST" action="{{ url_for('hotel.update_housekeeping_status', task_id=t.id) }}">
+                                <input type="hidden" name="status" value="completed">
+                                <button type="submit" class="btn-pms btn-pms-secondary btn-pms-sm">Complete</button>
+                            </form>
+                            {% elif t.status == 'completed' %}
+                            <form method="POST" action="{{ url_for('hotel.update_housekeeping_status', task_id=t.id) }}">
+                                <input type="hidden" name="status" value="inspected">
+                                <button type="submit" class="btn-pms btn-pms-primary btn-pms-sm">Inspect</button>
+                            </form>
+                            {% else %}
+                            <span style="font-size:0.75rem; color:var(--color-secondary); font-weight:600;">✓ Verified</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:32px; color:var(--color-muted);">No housekeeping tasks found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Assign Housekeeping Task -->
+<div id="assignTaskModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 500px;">
+        <div class="pms-modal-header">
+            <h3>Assign Housekeeping Task</h3>
+            <button class="pms-modal-close" onclick="closeModal('assignTaskModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('hotel.add_housekeeping_task') }}">
+            <div class="pms-floating-label">
+                <select name="room_id" required>
+                    <option value="" disabled selected>Select Room</option>
+                    {% for r in rooms %}
+                    <option value="{{ r.id }}">Room {{ r.room_number }} ({{ r.floor }}) — Current: {{ r.housekeeping_status|capitalize }}</option>
+                    {% endfor %}
+                </select>
+                <label>Target Room <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <select name="task_type">
+                        <option value="daily_clean" selected>Daily Refresh</option>
+                        <option value="checkout_clean">Checkout Deep Clean</option>
+                        <option value="deep_clean">Full Sanitization & Deep Clean</option>
+                        <option value="inspection">Supervisor Quality Check</option>
+                    </select>
+                    <label>Task Type</label>
+                </div>
+                <div class="pms-floating-label">
+                    <select name="priority">
+                        <option value="normal" selected>Normal</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <label>Priority</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <select name="assigned_to">
+                    {% for u in staff %}
+                    <option value="{{ u.id }}">{{ u.name }} ({{ u.username }})</option>
+                    {% endfor %}
+                </select>
+                <label>Assigned Housekeeper</label>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="notes" rows="2" placeholder=" "></textarea>
+                <label>Specific Instructions (e.g. linen replacement, extra towels)</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('assignTaskModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Create Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

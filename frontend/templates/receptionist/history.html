@@ -1,0 +1,75 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Past Booking History — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Past Reservation History & Archive</h1>
+        <p>Complete historical archive of completed guest stays and cancelled bookings.</p>
+    </div>
+</div>
+
+<div class="pms-table-toolbar">
+    <div style="font-size: 0.9rem; color: var(--color-muted);">
+        Archived records: <strong>{{ bookings|length }}</strong>
+    </div>
+
+    <div class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search archive by guest, phone, room, ref..." data-target-table="#historyTableBody">
+    </div>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Booking Ref</th>
+                    <th class="sortable">Guest Name</th>
+                    <th class="sortable">Room</th>
+                    <th class="sortable">Check-in</th>
+                    <th class="sortable">Check-out</th>
+                    <th class="sortable">Nights</th>
+                    <th class="sortable">Total Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                {% for b in bookings %}
+                <tr>
+                    <td class="mono"><strong>{{ b.booking_ref }}</strong></td>
+                    <td>
+                        <strong>{{ b.guest_name }}</strong><br>
+                        <small class="mono" style="color:var(--color-muted);">{{ b.guest_phone }}</small>
+                    </td>
+                    <td class="mono">Room {{ b.room_number or '—' }} ({{ b.room_type_name }})</td>
+                    <td class="mono">{{ b.check_in_date }}</td>
+                    <td class="mono">{{ b.check_out_date }}</td>
+                    <td class="mono">{{ b.nights }}</td>
+                    <td class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</strong></td>
+                    <td>
+                        <span class="badge-{{ b.status.replace('_', '-') }}">
+                            {{ b.status.replace('_', ' ').capitalize() }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('receptionist.booking_receipt', booking_id=b.id) }}" class="btn-pms btn-pms-outline btn-pms-sm">
+                            View Receipt
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align:center; padding:32px; color:var(--color-muted);">
+                        No past archived bookings found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

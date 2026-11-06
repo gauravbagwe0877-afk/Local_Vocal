@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Guest Registration — StaySmart Hotel{% endblock %}
+
+{% block content %}
+<div class="auth-page" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 40px 16px;">
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.06); max-width: 520px; width: 100%; padding: 36px; box-sizing: border-box;">
+        
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, var(--color-primary), var(--color-accent)); color: #fff; font-size: 1.6rem; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 12px;">
+                ✨
+            </div>
+            <h2 style="font-family: var(--font-headings); margin: 0 0 6px; font-size: 1.6rem; color: var(--color-text);">Create Guest Account</h2>
+            <p style="color: var(--color-muted); font-size: 0.88rem; margin: 0;">Register to book rooms online and manage your reservations</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.customer_register') }}">
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="text" name="name" required placeholder=" " autofocus>
+                    <label>Full Name <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="text" name="username" required placeholder=" ">
+                    <label>Choose Username <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="email" name="email" required placeholder=" ">
+                    <label>Email Address <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="tel" name="phone" required placeholder=" " pattern="[0-9+ -]{10,15}">
+                    <label>Mobile Number <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="password" name="password" required minlength="6" placeholder=" ">
+                    <label>Password (min 6 chars) <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="password" name="confirm_password" required minlength="6" placeholder=" ">
+                    <label>Confirm Password <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-pms btn-pms-primary" style="width: 100%; padding: 12px; font-size: 0.95rem; margin-top: 12px;">
+                Complete Registration & Join
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--color-muted); border-top: 1px solid var(--color-border); padding-top: 18px;">
+            Already registered? 
+            <a href="{{ url_for('auth.customer_login') }}" style="color: var(--color-primary); font-weight: 600;">Sign in to your account &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

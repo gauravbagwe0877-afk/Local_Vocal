@@ -1,0 +1,153 @@
+{% extends 'hotel/base_hotel.html' %}
+{% block title %}Expenses — {{ hotel_settings.hotel_name }} PMS{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Operational Expenses Tracker</h1>
+        <p>Monitor procurement, laundry, housekeeping supplies, utilities, and daily maintenance costs.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('addExpenseModal')">
+            <span>+ Record Expense</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── 1. SUMMARY STAT CARDS ── -->
+<div class="pms-stats-grid">
+    <div class="pms-stat-card">
+        <div class="pms-stat-header">
+            <div class="pms-stat-icon danger">💸</div>
+        </div>
+        <div class="pms-stat-num currency">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(grand_total) }}</div>
+        <div class="pms-stat-label">Total Outflow Recorded</div>
+        <div class="pms-stat-trend neutral">Expenses</div>
+    </div>
+
+    {% for ct in category_totals[:3] %}
+    <div class="pms-stat-card">
+        <div class="pms-stat-header">
+            <div class="pms-stat-icon primary">📦</div>
+        </div>
+        <div class="pms-stat-num currency" style="font-size: 22px;">{{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(ct.total) }}</div>
+        <div class="pms-stat-label">{{ ct.category }} ({{ ct.count }} entries)</div>
+        <div class="pms-stat-trend neutral">Category</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ── 2. FILTER & TOOLBAR ── -->
+<div class="pms-table-toolbar">
+    <div class="pms-filter-chips">
+        <a href="{{ url_for('hotel.expenses') }}" class="pms-chip {% if not selected_category %}active{% endif %}">
+            All Categories
+        </a>
+        {% for cat in categories[:6] %}
+        <a href="{{ url_for('hotel.expenses', category=cat) }}" class="pms-chip {% if selected_category == cat %}active{% endif %}">
+            {{ cat }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search description or method..." data-target-table="#expensesTableBody">
+    </div>
+</div>
+
+<!-- ── 3. EXPENSES DATA TABLE ── -->
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Date</th>
+                    <th class="sortable">Category</th>
+                    <th class="sortable">Description</th>
+                    <th class="sortable">Payment Method</th>
+                    <th class="sortable">Recorded By</th>
+                    <th class="sortable" style="text-align:right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody id="expensesTableBody">
+                {% for exp in expenses %}
+                <tr>
+                    <td class="mono"><strong>{{ exp.expense_date }}</strong></td>
+                    <td>
+                        <span style="font-weight:600; font-size:0.85rem; color:var(--color-primary);">{{ exp.category }}</span>
+                    </td>
+                    <td>{{ exp.description }}</td>
+                    <td style="text-transform: uppercase; font-size:0.8rem; font-weight:600;">
+                        {{ exp.method }}
+                    </td>
+                    <td>{{ exp.recorder_name or 'Admin' }}</td>
+                    <td class="mono" style="text-align:right; font-weight:700; color:var(--color-danger);">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(exp.amount) }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:32px; color:var(--color-muted);">No expenses found for this criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Record Expense -->
+<div id="addExpenseModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 500px;">
+        <div class="pms-modal-header">
+            <h3>Record Operational Expense</h3>
+            <button class="pms-modal-close" onclick="closeModal('addExpenseModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('hotel.add_expense') }}">
+            <div class="pms-floating-label">
+                <select name="category" required>
+                    <option value="" disabled selected>Select Category</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+                <label>Category <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="description" rows="2" required placeholder=" "></textarea>
+                <label>Item Description / Vendor Details <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="number" step="0.01" name="amount" min="1" required placeholder=" ">
+                    <label>Amount ({{ hotel_settings.currency_symbol }}) <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <select name="method">
+                        <option value="cash" selected>Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="card">Card</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                    </select>
+                    <label>Payment Method</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="date" name="expense_date" value="{{ today_date }}" required placeholder=" ">
+                <label>Expense Date <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('addExpenseModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Log Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

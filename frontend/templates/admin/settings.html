@@ -1,0 +1,73 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}System Settings — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Hotel Configuration & Global Policies</h1>
+        <p>Manage official property identity, billing credentials, standard timings, and tax rules.</p>
+    </div>
+</div>
+
+<div class="pms-card" style="max-width: 800px;">
+    <div class="pms-card-header">
+        <h3 class="pms-card-title">🏨 Property Identity & Contact</h3>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.settings') }}">
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <input type="text" name="hotel_name" value="{{ settings.hotel_name }}" required placeholder=" ">
+                <label>Hotel Name <span class="pms-required-star">*</span></label>
+            </div>
+            <div class="pms-floating-label">
+                <input type="tel" name="hotel_phone" value="{{ settings.hotel_phone }}" required placeholder=" ">
+                <label>Official Phone Number <span class="pms-required-star">*</span></label>
+            </div>
+        </div>
+
+        <div class="pms-floating-label">
+            <input type="email" name="hotel_email" value="{{ settings.hotel_email }}" required placeholder=" ">
+            <label>Front Desk / Invoicing Email <span class="pms-required-star">*</span></label>
+        </div>
+
+        <div class="pms-floating-label">
+            <textarea name="hotel_address" rows="2" required placeholder=" ">{{ settings.hotel_address }}</textarea>
+            <label>Physical Address (appears on tax invoices) <span class="pms-required-star">*</span></label>
+        </div>
+
+        <hr class="pms-form-divider">
+
+        <div class="pms-form-section-title">Standard Operating Timings</div>
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <input type="text" name="check_in_time" value="{{ settings.check_in_time }}" placeholder=" ">
+                <label>Check-in Time (e.g. 12:00 PM)</label>
+            </div>
+            <div class="pms-floating-label">
+                <input type="text" name="check_out_time" value="{{ settings.check_out_time }}" placeholder=" ">
+                <label>Check-out Time (e.g. 11:00 AM)</label>
+            </div>
+        </div>
+
+        <hr class="pms-form-divider">
+
+        <div class="pms-form-section-title">Taxation & Currency Rules</div>
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <input type="number" step="0.5" name="gst_rate" value="{{ settings.gst_rate }}" required placeholder=" ">
+                <label>Goods & Services Tax / GST (%) <span class="pms-required-star">*</span></label>
+            </div>
+            <div class="pms-floating-label">
+                <input type="text" name="currency_symbol" value="{{ settings.currency_symbol }}" required placeholder=" ">
+                <label>Currency Symbol (e.g. ₹ or $) <span class="pms-required-star">*</span></label>
+            </div>
+        </div>
+
+        <div class="pms-form-actions">
+            <button type="submit" class="btn-pms btn-pms-primary">Save Settings</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,234 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Room Management — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Hotel Room Management</h1>
+        <p>Add, update room properties, inspect occupancy states, and remove room inventory.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('addRoomModal')">
+            <span>+ Add New Room</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── Filter Chips & Search ── -->
+<div class="pms-table-toolbar">
+    <div class="pms-filter-chips">
+        <a href="{{ url_for('admin.rooms') }}" class="pms-chip {% if not selected_status %}active{% endif %}">
+            All ({{ counts.all }})
+        </a>
+        <a href="{{ url_for('admin.rooms', status='available') }}" class="pms-chip {% if selected_status == 'available' %}active{% endif %}">
+            Available ({{ counts.available }})
+        </a>
+        <a href="{{ url_for('admin.rooms', status='occupied') }}" class="pms-chip {% if selected_status == 'occupied' %}active{% endif %}">
+            Occupied ({{ counts.occupied }})
+        </a>
+        <a href="{{ url_for('admin.rooms', status='reserved') }}" class="pms-chip {% if selected_status == 'reserved' %}active{% endif %}">
+            Reserved ({{ counts.reserved }})
+        </a>
+        <a href="{{ url_for('admin.rooms', status='cleaning') }}" class="pms-chip {% if selected_status == 'cleaning' %}active{% endif %}">
+            Cleaning ({{ counts.cleaning }})
+        </a>
+        <a href="{{ url_for('admin.rooms', status='maintenance') }}" class="pms-chip {% if selected_status == 'maintenance' %}active{% endif %}">
+            Maintenance ({{ counts.maintenance }})
+        </a>
+    </div>
+
+    <div class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search room number, type, guest..." data-target-table="#adminRoomsTableBody">
+    </div>
+</div>
+
+<!-- ── Rooms Table ── -->
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Room No</th>
+                    <th class="sortable">Floor</th>
+                    <th class="sortable">Category</th>
+                    <th class="sortable">Base Rate</th>
+                    <th>Occupancy Status</th>
+                    <th>Hygiene Status</th>
+                    <th>Current Guest</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="adminRoomsTableBody">
+                {% for r in rooms %}
+                <tr>
+                    <td class="mono"><strong>Room {{ r.room_number }}</strong></td>
+                    <td>{{ r.floor }}</td>
+                    <td>{{ r.room_type_name }}</td>
+                    <td class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(r.base_rate) }}</td>
+                    <td><span class="badge-{{ r.status }}">{{ r.status|capitalize }}</span></td>
+                    <td>
+                        <span style="font-size:0.8rem; font-weight:600; color:{% if r.housekeeping_status == 'clean' %}var(--color-secondary){% elif r.housekeeping_status == 'dirty' %}var(--color-danger){% else %}var(--color-warning){% endif %};">
+                            ● {{ r.housekeeping_status|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.current_guest_name %}
+                        <strong>{{ r.current_guest_name }}</strong><br>
+                        <small class="mono" style="color:var(--color-muted);">{{ r.booking_ref }}</small>
+                        {% else %}
+                        <span style="color:var(--color-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td><small style="color:var(--color-muted);">{{ r.notes or '—' }}</small></td>
+                    <td>
+                        <div class="pms-table-actions">
+                            <button type="button" class="btn-pms btn-pms-outline btn-pms-sm" onclick="openEditRoomModal('{{ r.id }}', '{{ r.room_number }}', '{{ r.floor }}', '{{ r.room_type_id }}', '{{ r.status }}', '{{ r.housekeeping_status }}', '{{ r.notes|default('', true)|replace("'", "\\'") }}')">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-pms btn-pms-outline btn-pms-sm" style="color:var(--color-danger); border-color:var(--color-danger);" onclick="openConfirmDeleteModal('{{ url_for('admin.delete_room', room_id=r.id) }}', 'Room {{ r.room_number }}', 'DELETE')">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Add Room -->
+<div id="addRoomModal" class="pms-modal-overlay">
+    <div class="pms-modal-container">
+        <div class="pms-modal-header">
+            <h3>Add Hotel Room</h3>
+            <button class="pms-modal-close" onclick="closeModal('addRoomModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.add_room') }}">
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="text" name="room_number" required placeholder=" ">
+                    <label>Room Number (e.g. 106) <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="text" name="floor" required placeholder=" " value="Floor 1">
+                    <label>Floor (e.g. Floor 1) <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <select name="room_type_id" required>
+                    <option value="" disabled selected>Select Room Category</option>
+                    {% for rt in room_types %}
+                    <option value="{{ rt.id }}">{{ rt.name }} ({{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(rt.base_rate) }}/night)</option>
+                    {% endfor %}
+                </select>
+                <label>Room Category <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-floating-label">
+                <select name="status">
+                    <option value="available" selected>Available</option>
+                    <option value="cleaning">Cleaning</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="reserved">Reserved</option>
+                </select>
+                <label>Initial Status</label>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="notes" rows="2" placeholder=" "></textarea>
+                <label>Room Notes / Special Features</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('addRoomModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Save Room</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Room -->
+<div id="editRoomModal" class="pms-modal-overlay">
+    <div class="pms-modal-container">
+        <div class="pms-modal-header">
+            <h3>Edit Room <span id="editModalRoomNumTitle"></span></h3>
+            <button class="pms-modal-close" onclick="closeModal('editRoomModal')">&times;</button>
+        </div>
+        <form id="editRoomForm" method="POST">
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="text" name="room_number" id="editRoomNumber" required placeholder=" ">
+                    <label>Room Number</label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="text" name="floor" id="editRoomFloor" required placeholder=" ">
+                    <label>Floor</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <select name="room_type_id" id="editRoomTypeId" required>
+                    {% for rt in room_types %}
+                    <option value="{{ rt.id }}">{{ rt.name }} ({{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(rt.base_rate) }}/night)</option>
+                    {% endfor %}
+                </select>
+                <label>Room Category</label>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <select name="status" id="editRoomStatus">
+                        <option value="available">Available</option>
+                        <option value="occupied">Occupied</option>
+                        <option value="cleaning">Cleaning</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="reserved">Reserved</option>
+                    </select>
+                    <label>Occupancy Status</label>
+                </div>
+                <div class="pms-floating-label">
+                    <select name="housekeeping_status" id="editRoomHkStatus">
+                        <option value="clean">Clean</option>
+                        <option value="dirty">Dirty</option>
+                        <option value="inspecting">Inspecting</option>
+                    </select>
+                    <label>Hygiene Status</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="notes" id="editRoomNotes" rows="2" placeholder=" "></textarea>
+                <label>Room Notes</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('editRoomModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Update Room</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openEditRoomModal(id, num, floor, typeId, status, hkStatus, notes) {
+    document.getElementById('editRoomForm').action = "/admin/rooms/" + id + "/edit";
+    document.getElementById('editModalRoomNumTitle').textContent = num;
+    document.getElementById('editRoomNumber').value = num;
+    document.getElementById('editRoomFloor').value = floor;
+    document.getElementById('editRoomTypeId').value = typeId;
+    document.getElementById('editRoomStatus').value = status;
+    document.getElementById('editRoomHkStatus').value = hkStatus;
+    document.getElementById('editRoomNotes').value = notes;
+    openModal('editRoomModal');
+}
+</script>
+{% endblock %}
+

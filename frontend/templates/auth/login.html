@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Sign In — StaySmart Hotel Management{% endblock %}
+
+{% block content %}
+<div class="auth-page" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 40px 16px;">
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.08); max-width: 440px; width: 100%; padding: 36px; box-sizing: border-box;">
+        
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, var(--color-primary), var(--color-accent)); color: #fff; font-size: 1.6rem; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 12px;">
+                SS
+            </div>
+            <h2 style="font-family: var(--font-headings); margin: 0 0 6px; font-size: 1.6rem; color: var(--color-text);">StaySmart Hotel</h2>
+            <p style="color: var(--color-muted); font-size: 0.88rem; margin: 0;">Sign in to your account</p>
+        </div>
+
+        <!-- Role Portal Switcher Pills -->
+        <div style="display: flex; gap: 6px; background: #FAF5EE; padding: 4px; border-radius: 10px; margin-bottom: 24px; border: 1px solid var(--color-border);">
+            <a href="{{ url_for('auth.customer_login') }}" style="flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; text-decoration: none; color: var(--color-text); background: var(--color-surface); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                Guest / User
+            </a>
+            <a href="{{ url_for('auth.receptionist_login') }}" style="flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; text-decoration: none; color: var(--color-muted);">
+                Receptionist
+            </a>
+            <a href="{{ url_for('auth.admin_login') }}" style="flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; text-decoration: none; color: var(--color-muted);">
+                Admin
+            </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="pms-floating-label">
+                <input type="text" name="username" required placeholder=" " autofocus>
+                <label>Username or Email Address</label>
+            </div>
+
+            <div class="pms-floating-label" style="margin-top: 16px;">
+                <input type="password" name="password" required placeholder=" ">
+                <label>Password</label>
+            </div>
+
+            <button type="submit" class="btn-pms btn-pms-primary" style="width: 100%; padding: 12px; font-size: 0.95rem; margin-top: 12px;">
+                Sign In
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--color-muted); border-top: 1px solid var(--color-border); padding-top: 20px;">
+            Don't have a guest account? 
+            <a href="{{ url_for('auth.customer_register') }}" style="color: var(--color-primary); font-weight: 600;">Register as Customer &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

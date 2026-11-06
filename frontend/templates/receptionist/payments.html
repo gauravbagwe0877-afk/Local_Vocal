@@ -1,0 +1,129 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Payment Records & Cashiering — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Front Desk Cashiering & Payments</h1>
+        <p>Record guest settlement payments, process cash / card / UPI receipts, and inspect balances.</p>
+    </div>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Invoice No</th>
+                    <th class="sortable">Booking Ref</th>
+                    <th class="sortable">Guest Name</th>
+                    <th class="sortable">Subtotal</th>
+                    <th class="sortable">GST</th>
+                    <th class="sortable">Total</th>
+                    <th class="sortable">Paid</th>
+                    <th class="sortable">Balance Due</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in invoices %}
+                <tr>
+                    <td class="mono"><strong>{{ inv.invoice_number }}</strong></td>
+                    <td class="mono">{{ inv.booking_ref }}</td>
+                    <td>
+                        <strong>{{ inv.guest_name }}</strong><br>
+                        <small class="mono" style="color:var(--color-muted);">{{ inv.guest_phone }}</small>
+                    </td>
+                    <td class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(inv.subtotal) }}</td>
+                    <td class="mono">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(inv.tax_amount) }}</td>
+                    <td class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(inv.total) }}</strong></td>
+                    <td class="mono" style="color:var(--color-secondary);">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(inv.paid_amount) }}</td>
+                    <td class="mono" style="font-weight:700; color:{% if inv.balance_due > 0 %}var(--color-danger){% else %}var(--color-secondary){% endif %};">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(inv.balance_due) }}
+                    </td>
+                    <td>
+                        <span class="badge-{{ 'confirmed' if inv.status == 'paid' else ('pending' if inv.status == 'partial' else 'maintenance') }}">
+                            {{ inv.status|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="pms-table-actions">
+                            {% if inv.balance_due > 0 %}
+                            <button type="button" class="btn-pms btn-pms-secondary btn-pms-sm" onclick="openRecordPaymentModal('{{ inv.id }}', '{{ inv.invoice_number }}', '{{ '%.2f'|format(inv.balance_due) }}')">
+                                + Pay
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('receptionist.booking_receipt', booking_id=inv.booking_id) }}" class="btn-pms btn-pms-outline btn-pms-sm">
+                                Receipt
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Record Payment -->
+<div id="receptionistPayModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 480px;">
+        <div class="pms-modal-header">
+            <h3>Record Payment: <span id="payModalInvoiceNum"></span></h3>
+            <button class="pms-modal-close" onclick="closeModal('receptionistPayModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('receptionist.record_payment') }}">
+            <input type="hidden" name="invoice_id" id="payModalInvoiceId">
+
+            <div style="background:#FAF5EE; padding:12px; border-radius:var(--element-radius); margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.95rem;">
+                    <span>Outstanding Balance Due:</span>
+                    <strong class="mono" id="payModalBalanceDisplay" style="color:var(--color-danger);"></strong>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="number" step="0.01" name="amount" id="payModalAmountInput" required placeholder=" ">
+                <label>Amount Collected ({{ hotel_settings.currency_symbol }}) <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-floating-label">
+                <select name="method" required>
+                    <option value="cash" selected>Cash (Front Desk Till)</option>
+                    <option value="card">Card (POS Swiped)</option>
+                    <option value="upi">UPI (GPay / PhonePe / QR)</option>
+                    <option value="bank_transfer">Bank Transfer / NEFT</option>
+                </select>
+                <label>Payment Method <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="text" name="reference" placeholder=" ">
+                <label>Transaction Reference / Card Last 4 / UPI Ref</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('receptionistPayModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-secondary">Record Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openRecordPaymentModal(invId, invNum, balance) {
+    document.getElementById('payModalInvoiceId').value = invId;
+    document.getElementById('payModalInvoiceNum').textContent = invNum;
+    document.getElementById('payModalBalanceDisplay').textContent = "{{ hotel_settings.currency_symbol }}" + balance;
+    document.getElementById('payModalAmountInput').value = balance;
+    document.getElementById('payModalAmountInput').max = balance;
+    openModal('receptionistPayModal');
+}
+</script>
+{% endblock %}
+

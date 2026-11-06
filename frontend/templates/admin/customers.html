@@ -1,0 +1,83 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Customer Directory — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Registered Hotel Customers</h1>
+        <p>Complete guest directory, contact records, historical stays, and lifetime expenditure analysis.</p>
+    </div>
+</div>
+
+<div class="pms-table-toolbar">
+    <div style="font-size: 0.9rem; color: var(--color-muted);">
+        Total registered customers: <strong>{{ customers|length }}</strong>
+    </div>
+
+    <form method="GET" action="{{ url_for('admin.customers') }}" class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" name="search" value="{{ search }}" placeholder="Search customer by name, phone, email, ID...">
+    </form>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Customer Name</th>
+                    <th class="sortable">Contact Info</th>
+                    <th>Govt ID Proof</th>
+                    <th>Address</th>
+                    <th class="sortable">Stays</th>
+                    <th class="sortable">Lifetime Value</th>
+                    <th>Account Status</th>
+                    <th>Preferences / Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td>
+                        <strong style="font-size: 0.95rem;">{{ c.full_name }}</strong><br>
+                        <span class="mono" style="font-size: 0.75rem; color: var(--color-muted);">User: @{{ c.username or 'unlinked' }}</span>
+                    </td>
+                    <td>
+                        <span class="mono" style="font-size: 0.85rem; font-weight: 600;">{{ c.phone }}</span><br>
+                        <small style="color: var(--color-muted);">{{ c.email }}</small>
+                    </td>
+                    <td>
+                        {% if c.id_type %}
+                        <span style="font-size: 0.8rem; font-weight: 600;">{{ c.id_type }}</span><br>
+                        <small class="mono" style="color: var(--color-muted);">{{ c.id_number or 'Verified' }}</small>
+                        {% else %}
+                        <span style="color: var(--color-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ c.address or '—' }}</small></td>
+                    <td class="mono" style="font-weight: 700; color: var(--color-secondary);">
+                        {{ c.total_stays }}
+                    </td>
+                    <td class="mono" style="font-weight: 700;">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(c.lifetime_spent) }}
+                    </td>
+                    <td>
+                        <span class="badge-{{ 'confirmed' if c.user_active != 0 else 'occupied' }}">
+                            {{ 'Active' if c.user_active != 0 else 'Deactivated' }}
+                        </span>
+                    </td>
+                    <td><small style="color: var(--color-muted);">{{ c.notes or 'No special requests' }}</small></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 32px; color: var(--color-muted);">
+                        No customer profiles matching the search query.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

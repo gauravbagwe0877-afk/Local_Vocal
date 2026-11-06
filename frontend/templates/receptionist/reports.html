@@ -1,0 +1,78 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Daily Front Desk Report — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header no-print">
+    <div>
+        <h1>Daily Front Desk Operational Report</h1>
+        <p>Operational shift summary for <strong>{{ stats.date }}</strong>.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-outline" onclick="window.print()">
+            <span>🖨️ Print Shift Report</span>
+        </button>
+    </div>
+</div>
+
+<div class="pms-stats-grid">
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon secondary">🛬</div></div>
+        <div class="pms-stat-num">{{ stats.arrivals }}</div>
+        <div class="pms-stat-label">Arrivals Processed Today</div>
+    </div>
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon primary">🛫</div></div>
+        <div class="pms-stat-num">{{ stats.departures }}</div>
+        <div class="pms-stat-label">Departures Cleared Today</div>
+    </div>
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon info">💳</div></div>
+        <div class="pms-stat-num currency">{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(stats.revenue_collected) }}</div>
+        <div class="pms-stat-label">Collections Received Today</div>
+    </div>
+    <div class="pms-stat-card">
+        <div class="pms-stat-header"><div class="pms-stat-icon secondary">🏨</div></div>
+        <div class="pms-stat-num">{{ stats.occupied_rooms }}</div>
+        <div class="pms-stat-label">Rooms Occupied ({{ stats.available_rooms }} Available)</div>
+    </div>
+</div>
+
+<div class="pms-card">
+    <div class="pms-card-header">
+        <h3 class="pms-card-title">💵 Front Desk Collections Today</h3>
+    </div>
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Booking Ref</th>
+                    <th>Guest Name</th>
+                    <th>Method</th>
+                    <th>Reference</th>
+                    <th style="text-align:right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td class="mono">{{ p.created_at[:16] }}</td>
+                    <td class="mono"><strong>{{ p.booking_ref }}</strong></td>
+                    <td>{{ p.guest_name }}</td>
+                    <td style="text-transform: uppercase; font-weight:600;">{{ p.method }}</td>
+                    <td class="mono"><small>{{ p.reference or '—' }}</small></td>
+                    <td class="mono" style="text-align:right; font-weight:700; color:var(--color-secondary);">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(p.amount) }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:24px; color:var(--color-muted);">No payments recorded yet today.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,79 @@
+{% extends 'customer/base_customer.html' %}
+{% block title %}My Reservations & Stays — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>My Bookings & Stays</h1>
+        <p>Review current, upcoming, and previous reservations made under your account.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <a href="{{ url_for('customer.rooms') }}" class="btn-pms btn-pms-primary">
+            <span>+ Book Another Room</span>
+        </a>
+    </div>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Booking Ref</th>
+                    <th class="sortable">Room Category</th>
+                    <th class="sortable">Room No</th>
+                    <th class="sortable">Check-in</th>
+                    <th class="sortable">Check-out</th>
+                    <th class="sortable">Nights</th>
+                    <th class="sortable">Total Cost</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td class="mono"><strong>{{ b.booking_ref }}</strong></td>
+                    <td><strong>{{ b.room_type_name }}</strong></td>
+                    <td class="mono">{{ b.room_number or 'Assigned upon arrival' }}</td>
+                    <td class="mono">{{ b.check_in_date }}</td>
+                    <td class="mono">{{ b.check_out_date }}</td>
+                    <td class="mono">{{ b.nights }}</td>
+                    <td class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</strong></td>
+                    <td>
+                        <span class="badge-{{ b.status.replace('_', '-') }}">
+                            {{ b.status.replace('_', ' ').capitalize() }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="pms-table-actions">
+                            <a href="{{ url_for('customer.booking_receipt', booking_id=b.id) }}" class="btn-pms btn-pms-outline btn-pms-sm" title="View Bill & Receipt">
+                                Receipt
+                            </a>
+
+                            {% if b.status in ['confirmed', 'pending'] %}
+                            <form method="POST" action="{{ url_for('customer.cancel_booking', booking_id=b.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel booking {{ b.booking_ref }}?');">
+                                <button type="submit" class="btn-pms btn-pms-outline btn-pms-sm" style="color:var(--color-danger); border-color:var(--color-danger);" title="Cancel reservation">
+                                    Cancel
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--color-muted);">
+                        You have not made any hotel bookings yet.<br><br>
+                        <a href="{{ url_for('customer.rooms') }}" class="btn-pms btn-pms-primary">
+                            Explore Available Rooms & Book Now
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

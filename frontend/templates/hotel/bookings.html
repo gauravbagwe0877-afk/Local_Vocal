@@ -1,0 +1,326 @@
+{% extends 'hotel/base_hotel.html' %}
+{% block title %}Bookings — {{ hotel_settings.hotel_name }} PMS{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Guest Bookings & Reservations</h1>
+        <p>Manage check-ins, reservations, guest stays, and billing transitions.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-primary" onclick="openModal('createBookingModal')">
+            <span>+ Create New Booking</span>
+        </button>
+    </div>
+</div>
+
+<!-- ── 1. FILTER CHIPS & SEARCH TOOLBAR ── -->
+<div class="pms-table-toolbar">
+    <div class="pms-filter-chips">
+        <a href="{{ url_for('hotel.bookings') }}" class="pms-chip {% if not selected_status or selected_status == 'all' %}active{% endif %}">
+            All Bookings ({{ counts.all }})
+        </a>
+        <a href="{{ url_for('hotel.bookings', status='checked_in') }}" class="pms-chip {% if selected_status == 'checked_in' %}active{% endif %}">
+            Checked In ({{ counts.checked_in }})
+        </a>
+        <a href="{{ url_for('hotel.bookings', status='confirmed') }}" class="pms-chip {% if selected_status == 'confirmed' %}active{% endif %}">
+            Confirmed ({{ counts.confirmed }})
+        </a>
+        <a href="{{ url_for('hotel.bookings', status='pending') }}" class="pms-chip {% if selected_status == 'pending' %}active{% endif %}">
+            Pending ({{ counts.pending }})
+        </a>
+        <a href="{{ url_for('hotel.bookings', status='checked_out') }}" class="pms-chip {% if selected_status == 'checked_out' %}active{% endif %}">
+            Checked Out ({{ counts.checked_out }})
+        </a>
+        <a href="{{ url_for('hotel.bookings', status='cancelled') }}" class="pms-chip {% if selected_status == 'cancelled' %}active{% endif %}">
+            Cancelled ({{ counts.cancelled }})
+        </a>
+    </div>
+
+    <form method="GET" action="{{ url_for('hotel.bookings') }}" class="pms-search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" name="search" value="{{ search }}" placeholder="Search ref, guest name, phone...">
+        {% if selected_status %}<input type="hidden" name="status" value="{{ selected_status }}">{% endif %}
+    </form>
+</div>
+
+<!-- ── 2. BOOKINGS DATA TABLE ── -->
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Booking Ref</th>
+                    <th class="sortable">Guest</th>
+                    <th class="sortable">Room</th>
+                    <th class="sortable">Check-in</th>
+                    <th class="sortable">Check-out</th>
+                    <th class="sortable">Nights</th>
+                    <th class="sortable">Total Amount</th>
+                    <th class="sortable">Paid</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td class="mono">
+                        <strong>{{ b.booking_ref }}</strong><br>
+                        <small style="color:var(--color-muted); text-transform:capitalize;">via {{ b.source }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ b.guest_name }}</strong><br>
+                        <span class="mono" style="font-size:0.78rem; color:var(--color-muted);">{{ b.guest_phone }}</span>
+                    </td>
+                    <td>
+                        {% if b.room_number %}
+                        <span class="mono" style="font-weight:700;">Room {{ b.room_number }}</span><br>
+                        <small style="color:var(--color-muted);">{{ b.room_type_name }}</small>
+                        {% else %}
+                        <span style="color:var(--color-muted);">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td class="mono">{{ b.check_in_date }}</td>
+                    <td class="mono">{{ b.check_out_date }}</td>
+                    <td class="mono">{{ b.nights }}</td>
+                    <td class="mono"><strong>{{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</strong></td>
+                    <td class="mono" style="color:{% if b.paid_amount >= b.total_amount %}var(--color-secondary){% elif b.paid_amount > 0 %}var(--color-warning){% else %}var(--color-danger){% endif %};">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(b.paid_amount) }}
+                    </td>
+                    <td>
+                        <span class="badge-{{ b.status.replace('_', '-') }}">
+                            {{ b.status.replace('_', ' ').capitalize() }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="pms-table-actions">
+                            {% if b.status in ['confirmed', 'pending'] %}
+                            <form method="POST" action="{{ url_for('hotel.checkin_booking', booking_id=b.id) }}" style="display:inline;">
+                                <button type="submit" class="btn-pms btn-pms-secondary btn-pms-sm" title="Check-in guest">
+                                    Check In
+                                </button>
+                            </form>
+                            {% elif b.status == 'checked_in' %}
+                            <form method="POST" action="{{ url_for('hotel.checkout_booking', booking_id=b.id) }}" style="display:inline;">
+                                <button type="submit" class="btn-pms btn-pms-primary btn-pms-sm" title="Check-out guest">
+                                    Check Out
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if b.status in ['confirmed', 'pending'] %}
+                            <form method="POST" action="{{ url_for('hotel.cancel_booking', booking_id=b.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel booking {{ b.booking_ref }}?');">
+                                <button type="submit" class="btn-pms btn-pms-outline btn-pms-sm" style="color:var(--color-danger); border-color:var(--color-danger);" title="Cancel booking">
+                                    Cancel
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 32px; color: var(--color-muted);">
+                        No bookings matching this criteria found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination summary -->
+    <div class="pms-pagination">
+        <div>Showing 1 to {{ bookings|length }} of {{ counts.all }} bookings</div>
+        <div class="pms-pagination-controls">
+            <button class="pms-page-btn" disabled>&larr; Prev</button>
+            <button class="pms-page-btn active">1</button>
+            <button class="pms-page-btn" disabled>Next &rarr;</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Create New Booking -->
+<div id="createBookingModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 700px;">
+        <div class="pms-modal-header">
+            <h3>Create New Reservation</h3>
+            <button class="pms-modal-close" onclick="closeModal('createBookingModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('hotel.new_booking') }}">
+            <!-- Guest Selection -->
+            <div class="pms-form-section-title">1. Guest Selection</div>
+            <div class="pms-floating-label">
+                <select name="guest_id" id="bookingGuestSelect" onchange="toggleGuestCreation(this.value)" required>
+                    <option value="new" selected>+ Register New Guest</option>
+                    {% for g in guests %}
+                    <option value="{{ g.id }}">{{ g.full_name }} ({{ g.phone }}) — {{ g.email }}</option>
+                    {% endfor %}
+                </select>
+                <label>Select Guest or New <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div id="newGuestFields">
+                <div class="pms-form-row">
+                    <div class="pms-floating-label">
+                        <input type="text" name="new_guest_name" id="newGuestName" placeholder=" ">
+                        <label>Guest Full Name <span class="pms-required-star">*</span></label>
+                    </div>
+                    <div class="pms-floating-label">
+                        <input type="tel" name="new_guest_phone" id="newGuestPhone" placeholder=" ">
+                        <label>Phone Number <span class="pms-required-star">*</span></label>
+                    </div>
+                </div>
+                <div class="pms-form-row">
+                    <div class="pms-floating-label">
+                        <input type="email" name="new_guest_email" placeholder=" ">
+                        <label>Email Address</label>
+                    </div>
+                    <div class="pms-floating-label">
+                        <select name="new_guest_id_type">
+                            <option value="Aadhaar" selected>Aadhaar</option>
+                            <option value="Passport">Passport</option>
+                            <option value="Driving License">Driving License</option>
+                            <option value="Voter ID">Voter ID</option>
+                        </select>
+                        <label>Govt ID Type</label>
+                    </div>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="text" name="new_guest_id_number" placeholder=" ">
+                    <label>ID Number</label>
+                </div>
+            </div>
+
+            <hr class="pms-form-divider">
+
+            <!-- Stay Details -->
+            <div class="pms-form-section-title">2. Stay & Room</div>
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="date" name="check_in_date" id="bookingCheckIn" value="{{ today_date }}" required placeholder=" " onchange="calculateBookingStay()">
+                    <label>Check-in Date <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="date" name="check_out_date" id="bookingCheckOut" required placeholder=" " onchange="calculateBookingStay()">
+                    <label>Check-out Date <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <select name="room_id" id="bookingRoomSelect" required onchange="calculateBookingStay()">
+                    <option value="" disabled selected>Choose Room...</option>
+                    {% for r in rooms_available %}
+                    <option value="{{ r.id }}" data-rate="{{ r.base_rate }}" {% if r.status != 'available' %}disabled{% endif %}>
+                        Room {{ r.room_number }} ({{ r.room_type_name }} - {{ r.floor }}) — {{ hotel_settings.currency_symbol }}{{ "{:,.0f}".format(r.base_rate) }}/night {% if r.status != 'available' %}[{{ r.status }}]{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <label>Room Allocation <span class="pms-required-star">*</span></label>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="number" name="adults" value="1" min="1" max="6" required placeholder=" ">
+                    <label>Adults</label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="number" name="children" value="0" min="0" max="4" placeholder=" ">
+                    <label>Children</label>
+                </div>
+                <div class="pms-floating-label">
+                    <select name="status">
+                        <option value="confirmed" selected>Confirmed</option>
+                        <option value="checked_in">Direct Check-in</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                    <label>Initial Status</label>
+                </div>
+            </div>
+
+            <hr class="pms-form-divider">
+
+            <!-- Payment & Billing -->
+            <div class="pms-form-section-title">3. Billing & Deposit</div>
+            <div style="background:#FAF5EE; border:1px solid var(--color-border); border-radius:var(--element-radius); padding:14px; margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.9rem;">
+                    <span>Estimated Room Charges:</span>
+                    <strong class="mono" id="estRoomTotal">{{ hotel_settings.currency_symbol }}0.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--color-muted);">
+                    <span>GST ({{ hotel_settings.gst_rate }}%):</span>
+                    <span class="mono" id="estTaxTotal">{{ hotel_settings.currency_symbol }}0.00</span>
+                </div>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="number" name="advance_paid" value="0" min="0" step="100" placeholder=" ">
+                    <label>Advance Deposit Paid ({{ hotel_settings.currency_symbol }})</label>
+                </div>
+                <div class="pms-floating-label">
+                    <select name="payment_method">
+                        <option value="cash" selected>Cash</option>
+                        <option value="card">Credit / Debit Card</option>
+                        <option value="upi">UPI (GPay / PhonePe / Paytm)</option>
+                        <option value="bank_transfer">Bank Transfer / NEFT</option>
+                    </select>
+                    <label>Deposit Payment Method</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="special_requests" rows="2" placeholder=" "></textarea>
+                <label>Special Guest Requests / Preferences</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('createBookingModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-primary">Confirm & Create Reservation</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleGuestCreation(val) {
+    const fields = document.getElementById('newGuestFields');
+    const nameInput = document.getElementById('newGuestName');
+    const phoneInput = document.getElementById('newGuestPhone');
+    if (val === 'new') {
+        fields.style.display = 'block';
+        nameInput.required = true;
+        phoneInput.required = true;
+    } else {
+        fields.style.display = 'none';
+        nameInput.required = false;
+        phoneInput.required = false;
+    }
+}
+
+function calculateBookingStay() {
+    const checkIn = new Date(document.getElementById('bookingCheckIn').value);
+    const checkOut = new Date(document.getElementById('bookingCheckOut').value);
+    const roomSelect = document.getElementById('bookingRoomSelect');
+    const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+
+    if (checkIn && checkOut && checkOut > checkIn && selectedOption && selectedOption.dataset.rate) {
+        const diffTime = Math.abs(checkOut - checkIn);
+        const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const rate = parseFloat(selectedOption.dataset.rate);
+        const subtotal = nights * rate;
+        const gstRate = parseFloat("{{ hotel_settings.gst_rate }}") || 12;
+        const tax = subtotal * (gstRate / 100);
+
+        document.getElementById('estRoomTotal').textContent = "{{ hotel_settings.currency_symbol }}" + subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('estTaxTotal').textContent = "{{ hotel_settings.currency_symbol }}" + tax.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    }
+}
+</script>
+{% endblock %}
+

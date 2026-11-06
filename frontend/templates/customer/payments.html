@@ -1,0 +1,59 @@
+{% extends 'customer/base_customer.html' %}
+{% block title %}My Payment Receipts — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>My Payment Transactions</h1>
+        <p>Review all payment transactions, transaction reference codes, and billing receipts.</p>
+    </div>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Date</th>
+                    <th class="sortable">Invoice No</th>
+                    <th class="sortable">Booking Ref</th>
+                    <th class="sortable">Room Category</th>
+                    <th class="sortable">Payment Method</th>
+                    <th class="sortable">Transaction ID / Reference</th>
+                    <th class="sortable" style="text-align: right;">Amount Paid</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td class="mono"><strong>{{ p.payment_date }}</strong></td>
+                    <td class="mono">{{ p.invoice_number }}</td>
+                    <td class="mono"><strong>{{ p.booking_ref }}</strong></td>
+                    <td>{{ p.room_type_name }}</td>
+                    <td style="text-transform: uppercase; font-weight: 600; font-size: 0.8rem;">
+                        {{ p.method }}
+                    </td>
+                    <td class="mono"><small>{{ p.reference or '—' }}</small></td>
+                    <td class="mono" style="text-align: right; font-weight: 700; color: var(--color-secondary);">
+                        {{ hotel_settings.currency_symbol }}{{ "{:,.2f}".format(p.amount) }}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('customer.booking_receipt', booking_id=p.booking_id) }}" class="btn-pms btn-pms-outline btn-pms-sm">
+                            Tax Invoice
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 36px; color: var(--color-muted);">
+                        No payment transactions recorded for your account yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

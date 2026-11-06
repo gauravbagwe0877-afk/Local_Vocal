@@ -1,0 +1,61 @@
+{% extends 'customer/base_customer.html' %}
+{% block title %}My Profile — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Guest Profile & Preferences</h1>
+        <p>Update your contact phone, residential address, and ID verification document for swift check-in.</p>
+    </div>
+</div>
+
+<div class="pms-card" style="max-width: 680px;">
+    <form method="POST" action="{{ url_for('customer.profile') }}">
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <label>Full Name <span class="pms-required-star">*</span></label>
+                <input type="text" name="full_name" value="{{ guest.full_name }}" required placeholder="Enter your full name">
+            </div>
+            <div class="pms-floating-label">
+                <label>Mobile Number <span class="pms-required-star">*</span></label>
+                <input type="tel" name="phone" value="{{ guest.phone }}" required placeholder="Enter mobile number">
+            </div>
+        </div>
+
+        <div class="pms-floating-label">
+            <label>Email Address <span class="pms-required-star">*</span></label>
+            <input type="email" name="email" value="{{ guest.email }}" required placeholder="Enter email address">
+        </div>
+
+        <div class="pms-form-row">
+            <div class="pms-floating-label">
+                <label>Govt ID Document</label>
+                <select name="id_type">
+                    <option value="Aadhaar" {% if guest.id_type == 'Aadhaar' %}selected{% endif %}>Aadhaar Card</option>
+                    <option value="Passport" {% if guest.id_type == 'Passport' %}selected{% endif %}>Passport</option>
+                    <option value="Driving License" {% if guest.id_type == 'Driving License' %}selected{% endif %}>Driving License</option>
+                    <option value="Voter ID" {% if guest.id_type == 'Voter ID' %}selected{% endif %}>Voter ID</option>
+                </select>
+            </div>
+            <div class="pms-floating-label">
+                <label>ID Document Number</label>
+                <input type="text" name="id_number" value="{{ guest.id_number or '' }}" placeholder="Enter ID document number">
+            </div>
+        </div>
+
+        <div class="pms-floating-label">
+            <label>Residential Address / City</label>
+            <textarea name="address" rows="2" placeholder="Enter residential address / city">{{ guest.address or '' }}</textarea>
+        </div>
+
+        <div style="background: #FAF5EE; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 0.85rem; color: var(--color-muted);">
+            Member Lifetime Stays Completed: <strong class="mono" style="color: var(--color-secondary);">{{ guest.total_stays }}</strong>
+        </div>
+
+        <div class="pms-form-actions">
+            <button type="submit" class="btn-pms btn-pms-primary">Save Profile Updates</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

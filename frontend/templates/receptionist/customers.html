@@ -1,0 +1,146 @@
+{% extends 'receptionist/base_receptionist.html' %}
+{% block title %}Customer Directory — {{ hotel_settings.hotel_name }}{% endblock %}
+
+{% block content %}
+<div class="pms-page-header">
+    <div>
+        <h1>Guest Management & Registration</h1>
+        <p>Register walk-in guests, look up guest profiles by name, phone, or booking ID.</p>
+    </div>
+    <div class="pms-actions-bar">
+        <button type="button" class="btn-pms btn-pms-secondary" onclick="openModal('registerCustomerModal')">
+            <span>+ Register New Customer</span>
+        </button>
+    </div>
+</div>
+
+<div class="pms-table-toolbar">
+    <div style="font-size: 0.9rem; color: var(--color-muted);">
+        Customers found: <strong>{{ customers|length }}</strong>
+    </div>
+
+    <form method="GET" action="{{ url_for('receptionist.customers') }}" class="pms-search-input" style="display:flex; gap:8px;">
+        <div style="position:relative; flex:1;">
+            <span class="search-icon">🔍</span>
+            <input type="text" name="search" value="{{ search }}" placeholder="Search by name, phone, email, ID card...">
+        </div>
+        <div style="width: 180px;">
+            <input type="text" name="booking_id" value="{{ booking_id }}" placeholder="Filter by Booking ID..." style="width:100%; padding:9px 12px; border:1px solid var(--color-border); border-radius:var(--element-radius); font-size:0.85rem; font-family:var(--font-mono);">
+        </div>
+        <button type="submit" class="btn-pms btn-pms-outline btn-pms-sm">Filter</button>
+    </form>
+</div>
+
+<div class="pms-card">
+    <div class="pms-table-container">
+        <table class="pms-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Guest Name</th>
+                    <th class="sortable">Phone</th>
+                    <th class="sortable">Email</th>
+                    <th>Govt ID Document</th>
+                    <th>Address</th>
+                    <th class="sortable">Past Stays</th>
+                    <th>Latest Booking</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td><strong style="font-size: 0.95rem;">{{ c.full_name }}</strong></td>
+                    <td class="mono"><strong>{{ c.phone }}</strong></td>
+                    <td>{{ c.email }}</td>
+                    <td>
+                        {% if c.id_type %}
+                        <span style="font-weight: 600; font-size: 0.8rem;">{{ c.id_type }}</span><br>
+                        <small class="mono" style="color: var(--color-muted);">{{ c.id_number or 'On File' }}</small>
+                        {% else %}
+                        <span style="color: var(--color-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ c.address or '—' }}</small></td>
+                    <td class="mono" style="font-weight: 700; color: var(--color-secondary);">
+                        {{ c.total_stays }}
+                    </td>
+                    <td class="mono"><small>{{ c.last_booking_ref or 'None' }}</small></td>
+                    <td>
+                        <a href="{{ url_for('receptionist.new_booking') }}?guest_id={{ c.id }}" class="btn-pms btn-pms-secondary btn-pms-sm">
+                            + Book Stay
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 32px; color: var(--color-muted);">
+                        No customer profiles matching search query.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal: Register Customer -->
+<div id="registerCustomerModal" class="pms-modal-overlay">
+    <div class="pms-modal-container" style="max-width: 550px;">
+        <div class="pms-modal-header">
+            <h3>Register New Customer</h3>
+            <button class="pms-modal-close" onclick="closeModal('registerCustomerModal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('receptionist.new_customer') }}">
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <input type="text" name="full_name" required placeholder=" " autofocus>
+                    <label>Guest Full Name <span class="pms-required-star">*</span></label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="tel" name="phone" required placeholder=" ">
+                    <label>Mobile Number <span class="pms-required-star">*</span></label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <input type="email" name="email" placeholder=" ">
+                <label>Email Address</label>
+            </div>
+
+            <div class="pms-form-row">
+                <div class="pms-floating-label">
+                    <select name="id_type">
+                        <option value="Aadhaar" selected>Aadhaar Card</option>
+                        <option value="Passport">Passport</option>
+                        <option value="Driving License">Driving License</option>
+                        <option value="Voter ID">Voter ID</option>
+                    </select>
+                    <label>Govt Photo ID Type</label>
+                </div>
+                <div class="pms-floating-label">
+                    <input type="text" name="id_number" placeholder=" ">
+                    <label>ID Document Number</label>
+                </div>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="address" rows="2" placeholder=" "></textarea>
+                <label>Residential / City Address</label>
+            </div>
+
+            <div class="pms-floating-label">
+                <textarea name="notes" rows="2" placeholder=" "></textarea>
+                <label>Guest Preferences / Food Allergies / Notes</label>
+            </div>
+
+            <div class="pms-form-actions">
+                <button type="button" class="btn-pms btn-pms-outline" onclick="closeModal('registerCustomerModal')">Cancel</button>
+                <button type="submit" class="btn-pms btn-pms-secondary">Register Guest</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
